@@ -12,7 +12,7 @@ const QUETZAL_CONFIG = {
   // URL del backend.
   // - Para desarrollo local: 'http://localhost:3000'
   // - Para producción: la URL que te dé Render (ej: 'https://quetzal-ai-backend.onrender.com')
-  API_URL: 'https://quetzal-ai-backend.onrender.com/',
+  API_URL: 'https://quetzal-ai-backend.onrender.com',
 
   // Versión actual (se muestra en el header)
   VERSION: 'v1.1.0',
