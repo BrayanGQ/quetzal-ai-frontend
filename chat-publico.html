@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atención al cliente</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="public-body">
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner">
+    <div class="demo-banner-content">
+      <strong>🎬 Demo:</strong>
+      <span id="biz-banner-text">Esta es una simulación de cómo el chatbot se vería en el sitio web de un negocio real.</span>
+      <a href="admin.html" class="demo-banner-link">← Volver al panel de Quetzal AI</a>
+    </div>
+  </div>
+
+  <!-- SIMULATED BUSINESS WEBSITE -->
+  <div class="business-site">
+
+    <!-- Business header (simulated) -->
+    <header class="business-header">
+      <div class="business-brand">
+        <div class="business-emoji" id="biz-emoji">🏪</div>
+        <div>
+          <div class="business-title" id="biz-display-name">Tienda Don José</div>
+          <div class="business-tag" id="biz-display-tag">Abarrotes · Zona 11, Guatemala</div>
+        </div>
+      </div>
+      <nav class="business-nav">
+        <a href="#" class="active">Inicio</a>
+        <a href="#">Productos</a>
+        <a href="#">Contacto</a>
+      </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="business-hero">
+      <h1 id="biz-hero-title">Productos frescos, a la puerta de tu casa</h1>
+      <p id="biz-hero-text">Tu negocio de confianza. Atendemos tus consultas con nuestro asistente virtual.</p>
+      <div class="business-features">
+        <div class="biz-feature">
+          <div class="biz-feature-icon">🛵</div>
+          <div>
+            <strong>Entregas a domicilio</strong>
+            <span id="biz-delivery-summary">Consultá zonas</span>
+          </div>
+        </div>
+        <div class="biz-feature">
+          <div class="biz-feature-icon">⏰</div>
+          <div>
+            <strong>Horario amplio</strong>
+            <span id="biz-hours-summary">Consultá horarios</span>
+          </div>
+        </div>
+        <div class="biz-feature">
+          <div class="biz-feature-icon">💳</div>
+          <div>
+            <strong>Múltiples pagos</strong>
+            <span id="biz-payment-summary">Varias formas</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mock product grid (dinámico) -->
+    <section class="business-products">
+      <h2>Productos destacados</h2>
+      <div class="product-grid" id="biz-product-grid">
+        <!-- Se rellena dinámicamente con JS -->
+      </div>
+    </section>
+
+    <footer class="business-footer">
+      <p id="biz-footer">© Tienda Don José</p>
+      <p class="powered">Asistente virtual con IA, impulsado por <a href="index.html">Quetzal AI</a></p>
+    </footer>
+
+  </div>
+
+  <!-- CHATBOT WIDGET (siempre visible flotante) -->
+  <div id="chat-widget" class="chat-widget">
+
+    <!-- Botón flotante para abrir/cerrar -->
+    <button id="chat-toggle" class="chat-toggle" onclick="chatPublico.toggle()" aria-label="Abrir chat">
+      <svg id="chat-icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" fill="white"/>
+        <circle cx="9" cy="10" r="1.5" fill="white"/>
+        <circle cx="12" cy="10" r="1.5" fill="white"/>
+        <circle cx="15" cy="10" r="1.5" fill="white"/>
+      </svg>
+      <svg id="chat-icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:none;">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="white"/>
+      </svg>
+      <span class="chat-toggle-pulse"></span>
+    </button>
+
+    <!-- Ventana de chat -->
+    <div id="chat-window" class="chat-window">
+      <div class="chat-window-header">
+        <div class="chat-avatar-wrap">
+          <div class="chat-avatar-public" id="chat-avatar-emoji">🏪</div>
+          <div class="chat-status-online"></div>
+        </div>
+        <div class="chat-info-public">
+          <div class="chat-business-name" id="chat-biz-name">Tienda Don José</div>
+          <div class="chat-status-text">
+            <span class="chat-online-dot"></span>
+            En línea — responde al instante
+          </div>
+        </div>
+        <div class="chat-powered">
+          <span class="powered-text">Con</span>
+          <img src="img/logo.png" alt="Quetzal AI" class="powered-logo" />
+          <span class="powered-name">Quetzal AI</span>
+        </div>
+      </div>
+
+      <div id="chat-messages" class="chat-messages-public">
+        <div class="message bot">
+          <div class="bubble">¡Hola! 👋 Soy el asistente virtual. Pregúntame sobre nuestros productos, horarios, entregas o lo que necesités. ¿En qué te puedo ayudar?</div>
+        </div>
+      </div>
+
+      <div class="chat-suggestions-public" id="chat-suggestions">
+        <button class="chip" onclick="chatPublico.quickAsk('¿Cuál es el horario?')">¿Horarios?</button>
+        <button class="chip" onclick="chatPublico.quickAsk('¿Hacen entregas a domicilio?')">¿Entregas?</button>
+        <button class="chip" onclick="chatPublico.quickAsk('¿Cuáles son sus productos?')">¿Productos?</button>
+        <button class="chip" onclick="chatPublico.quickAsk('¿Aceptan tarjeta?')">¿Aceptan tarjeta?</button>
+      </div>
+
+      <div class="chat-input-row-public">
+        <input type="text" id="chat-input" placeholder="Escribe tu pregunta..." onkeypress="if(event.key==='Enter') chatPublico.sendMessage()" />
+        <button class="btn-send-public" onclick="chatPublico.sendMessage()" aria-label="Enviar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/chat-publico.js"></script>
+</body>
+</html>

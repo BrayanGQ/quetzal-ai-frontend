@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quetzal AI — Panel del Negocio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <img src="img/logo.png" alt="Quetzal AI" class="logo-img" />
+      <div>
+        <div class="logo-name">Quetzal AI</div>
+        <div class="logo-sub">Panel del negocio</div>
+      </div>
+    </a>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Mi Negocio</div>
+
+      <a class="nav-item active" data-tab="ventas" onclick="admin.switchTab('ventas', this)">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 12V6M8 12V3M13 12V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        Panel de Ventas
+      </a>
+
+      <a class="nav-item" data-tab="generator" onclick="admin.switchTab('generator', this)">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        Generador de Contenido
+      </a>
+
+      <a class="nav-item" data-tab="chatbot-config" onclick="admin.switchTab('chatbot-config', this)">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4h10v7H6l-3 2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        Configurar Chatbot
+      </a>
+
+      <div class="nav-section-label" style="margin-top: 28px;">Mi Cuenta</div>
+      <div class="nav-info">
+        <div class="nav-info-label">Estudiante</div>
+        <div class="nav-info-value">Brayan A. Gómez Q.</div>
+      </div>
+      <div class="nav-info">
+        <div class="nav-info-label">Universidad</div>
+        <div class="nav-info-value">UMG Guatemala</div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-dot"></div>
+      <span>API conectada</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <header class="header">
+      <div>
+        <div class="breadcrumb">Quetzal AI / Panel del negocio</div>
+        <h1 id="page-title">Panel de Ventas</h1>
+      </div>
+      <div class="header-actions">
+        <a href="chat-publico.html" target="_blank" class="header-chip header-chip-link">
+          <span class="dot-green"></span>
+          Ver chatbot público →
+        </a>
+      </div>
+    </header>
+
+
+    <!-- =================== TAB: PANEL DE VENTAS =================== -->
+    <section class="tab-panel active" id="tab-ventas">
+      <div class="panel-intro">
+        <h2>Panel de Ventas <span class="status-pill status-ok">Funcional</span></h2>
+        <p>Registra cada venta de tu negocio y la IA analizará automáticamente los patrones, productos estrella y horas pico.</p>
+      </div>
+
+      <!-- Quick add form -->
+      <div class="add-sale-card">
+        <div class="add-sale-header">
+          <h3>Registrar nueva venta</h3>
+          <span class="hint">La IA usará estos datos para analizar tu negocio</span>
+        </div>
+        <div class="add-sale-grid">
+          <div class="form-group">
+            <label>Producto</label>
+            <input type="text" id="sale-product" placeholder="Ej: Pan dulce" />
+          </div>
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" id="sale-qty" placeholder="1" min="1" value="1" />
+          </div>
+          <div class="form-group">
+            <label>Precio unitario (Q)</label>
+            <input type="number" id="sale-price" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Fecha y hora</label>
+            <input type="datetime-local" id="sale-date" />
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="btn-primary" onclick="ventas.addSale()">+ Registrar venta</button>
+          <button class="btn-secondary" onclick="ventas.loadSampleData()">Cargar datos de ejemplo</button>
+          <button class="btn-secondary btn-danger-text" onclick="ventas.clearAll()">Borrar todo</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpi-grid">
+        <!-- Se llenan dinámicamente con JS -->
+      </div>
+
+      <!-- Chart + Insights -->
+      <div class="dashboard-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="card-title">Ventas por día</div>
+              <div class="card-subtitle" id="chart-subtitle">Cargando...</div>
+            </div>
+          </div>
+          <div class="chart-container" id="bar-chart"></div>
+          <div class="chart-labels" id="chart-labels"></div>
+        </div>
+
+        <div class="insights-card">
+          <div class="card-title">
+            <span class="ai-badge">IA</span>
+            Análisis automático
+            <button class="btn-refresh" onclick="ventas.requestAIAnalysis()" title="Re-analizar con IA">↻</button>
+          </div>
+          <div id="insights-container">
+            <div class="insight-empty">
+              <p>Registra al menos 3 ventas y la IA te dará insights automáticos sobre tu negocio.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales table -->
+      <div class="table-card">
+        <div class="card-title">Historial de ventas</div>
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Fecha y hora</th>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Precio</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="sales-tbody"></tbody>
+        </table>
+        <div id="sales-empty" class="table-empty">
+          No hay ventas registradas. Agregá tu primera venta arriba.
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =================== TAB: GENERADOR =================== -->
+    <section class="tab-panel" id="tab-generator">
+      <div class="panel-intro">
+        <h2>Generador de Contenido <span class="status-pill status-ok">Funcional</span></h2>
+        <p>Describe lo que quieres comunicar y la IA redactará una publicación completa con texto e imagen lista para redes sociales.</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo de contenido</label>
+          <select id="content-type">
+            <option value="post">Publicación para Facebook / Instagram</option>
+            <option value="promo">Mensaje de promoción</option>
+            <option value="response">Respuesta a cliente</option>
+            <option value="whatsapp">Mensaje de WhatsApp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tono</label>
+          <select id="content-tone">
+            <option value="amigable">Amigable y cercano</option>
+            <option value="profesional">Profesional</option>
+            <option value="divertido">Divertido</option>
+            <option value="urgente">Urgente / promocional</option>
+          </select>
+        </div>
+        <div class="form-group form-group-wide">
+          <label>Describe lo que quieres comunicar</label>
+          <textarea id="content-prompt" placeholder="Ej: Anunciar que tenemos 2x1 en pizza familiar todos los viernes de este mes..."></textarea>
+        </div>
+        <div class="form-group form-group-wide">
+          <label class="checkbox-label">
+            <input type="checkbox" id="gen-image" checked />
+            <span>Generar también una imagen con IA (Pollinations.ai — gratis)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="admin.generateContent()">+ Generar con IA</button>
+        <button class="btn-secondary" onclick="admin.clearGenerator()">Limpiar</button>
+      </div>
+
+      <div class="output-card">
+        <div class="output-header">
+          <div class="output-title">
+            <span class="ai-badge">IA</span>
+            Resultado
+          </div>
+          <button class="btn-copy" onclick="admin.copyOutput('generator-output-text')">Copiar texto</button>
+        </div>
+        <div class="output-text" id="generator-output-text">El contenido generado aparecerá aquí...</div>
+        <div class="output-image-wrap" id="output-image-wrap" style="display:none;">
+          <div class="output-image-header">
+            <span class="ai-badge-alt">Imagen generada con IA</span>
+            <a id="download-img" href="#" download="imagen-quetzal-ai.jpg" class="btn-copy" target="_blank">Descargar</a>
+          </div>
+          <img id="output-image" alt="Imagen generada con IA" />
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =================== TAB: CONFIGURAR CHATBOT =================== -->
+    <section class="tab-panel" id="tab-chatbot-config">
+      <div class="panel-intro">
+        <h2>Configurar Chatbot <span class="status-pill status-ok">Funcional</span></h2>
+        <p>Esta es la información que la IA usará para responder a tus clientes. Configúrala una vez y el chatbot la usará en cada conversación.</p>
+      </div>
+
+      <div class="config-grid">
+        <div class="form-group form-group-wide">
+          <label>Nombre del negocio</label>
+          <input type="text" id="biz-name" placeholder="Ej: Tienda Don José" />
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de negocio</label>
+          <input type="text" id="biz-type" placeholder="Ej: tienda de abarrotes" />
+        </div>
+
+        <div class="form-group">
+          <label>Ubicación</label>
+          <input type="text" id="biz-location" placeholder="Ej: Zona 11, Ciudad de Guatemala" />
+        </div>
+
+        <div class="form-group form-group-wide">
+          <label>Horarios de atención</label>
+          <input type="text" id="biz-hours" placeholder="Ej: Lunes a sábado 7 AM - 8 PM, domingo 8 AM - 2 PM" />
+        </div>
+
+        <div class="form-group form-group-wide">
+          <label>Información de entregas</label>
+          <textarea id="biz-delivery" rows="3" placeholder="Ej: Entregas en zonas 11, 12 y 13. Envío gratis en pedidos mayores a Q 100..."></textarea>
+        </div>
+
+        <div class="form-group form-group-wide">
+          <label>Formas de pago aceptadas</label>
+          <textarea id="biz-payment" rows="2" placeholder="Ej: Efectivo, tarjeta de débito y crédito, Tigo Money..."></textarea>
+        </div>
+
+        <div class="form-group form-group-wide">
+          <label>Productos y precios <span class="hint">(uno por línea)</span></label>
+          <textarea id="biz-products" rows="6" placeholder="Azúcar blanca: libra Q 8, arroba Q 180&#10;Tortillas hechas a mano: docena Q 15&#10;Pan francés: unidad Q 5, docena Q 50"></textarea>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="admin.saveChatbotConfig()">Guardar configuración</button>
+        <button class="btn-secondary" onclick="admin.loadDefaultConfig()">Cargar ejemplo (Tienda Don José)</button>
+        <a href="chat-publico.html" target="_blank" class="btn-secondary">Probar chatbot →</a>
+      </div>
+
+      <div class="config-note">
+        <strong>¿Cómo funciona?</strong> Toda esta información se convierte automáticamente en un <em>system prompt</em> que se envía a Llama 3.3 (a través de Groq) cada vez que un cliente hace una pregunta. La IA responde como si hubiera sido entrenada específicamente para tu negocio.
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/ventas.js"></script>
+</body>
+</html>
