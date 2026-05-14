@@ -1902,3 +1902,207 @@ h1 {
   }
   .main { margin-left: 0; padding: 20px; }
 }
+
+/* ===========================
+   IA AVANZADA — Predicción y Consejos
+   =========================== */
+
+.ai-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.btn-ai-action {
+  background: linear-gradient(135deg, #1E3A5F, #0F1E33);
+  color: white;
+  border: none;
+  padding: 16px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ai-action::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(20,184,166,0.15), transparent);
+  transition: left 0.5s;
+}
+
+.btn-ai-action:hover::before {
+  left: 100%;
+}
+
+.btn-ai-action:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.btn-ai-action .ai-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.btn-ai-action strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.btn-ai-action small {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.65);
+}
+
+.prediction-card,
+.consejos-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.prediction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.btn-close-card {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.btn-close-card:hover {
+  background: #F1F5F9;
+  color: var(--text);
+}
+
+.prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.prediction-stat {
+  background: linear-gradient(135deg, rgba(20,184,166,0.06), rgba(30,58,95,0.03));
+  border: 1px solid rgba(20,184,166,0.18);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.prediction-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.prediction-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.prediction-stat-value.range {
+  font-size: 16px;
+}
+
+.prediction-recomendacion {
+  background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.03));
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.prediction-recomendacion strong {
+  color: var(--gold-dark);
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Consejos */
+
+.consejos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.consejo-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: #F8FAFC;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.consejo-item:hover {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.consejo-emoji {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.consejo-titulo {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 3px;
+}
+
+.consejo-accion {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+@media (max-width: 768px) {
+  .ai-actions-row { grid-template-columns: 1fr; }
+  .prediction-grid { grid-template-columns: 1fr; }
+}

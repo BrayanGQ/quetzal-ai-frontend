@@ -123,6 +123,48 @@
         <!-- Se llenan dinámicamente con JS -->
       </div>
 
+      <!-- BOTONES IA AVANZADA -->
+      <div class="ai-actions-row">
+        <button class="btn-ai-action" onclick="ventas.requestPrediction()">
+          <span class="ai-icon">🔮</span>
+          <div>
+            <strong>Predecir próximos 7 días</strong>
+            <small>Llama 3.3 proyecta tus ventas</small>
+          </div>
+        </button>
+        <button class="btn-ai-action" onclick="ventas.requestConsejos()">
+          <span class="ai-icon">💼</span>
+          <div>
+            <strong>Consejos para mi negocio</strong>
+            <small>Plan de acción personalizado</small>
+          </div>
+        </button>
+      </div>
+
+      <!-- CONTENEDOR DE PREDICCIÓN -->
+      <div id="prediction-card" class="prediction-card" style="display:none;">
+        <div class="prediction-header">
+          <div class="card-title">
+            <span class="ai-badge">IA</span>
+            🔮 Predicción para los próximos 7 días
+          </div>
+          <button class="btn-close-card" onclick="ventas.closePrediction()" title="Cerrar">×</button>
+        </div>
+        <div id="prediction-content"></div>
+      </div>
+
+      <!-- CONTENEDOR DE CONSEJOS -->
+      <div id="consejos-card" class="consejos-card" style="display:none;">
+        <div class="prediction-header">
+          <div class="card-title">
+            <span class="ai-badge">IA</span>
+            💼 Plan de acción para tu negocio
+          </div>
+          <button class="btn-close-card" onclick="ventas.closeConsejos()" title="Cerrar">×</button>
+        </div>
+        <div id="consejos-content"></div>
+      </div>
+
       <!-- Chart + Insights -->
       <div class="dashboard-grid">
         <div class="chart-card">
@@ -206,7 +248,7 @@
         <div class="form-group form-group-wide">
           <label class="checkbox-label">
             <input type="checkbox" id="gen-image" checked />
-            <span>Generar también una imagen con IA (Pollinations.ai — gratis)</span>
+            <span>Generar también una imagen con IA (Flux Schnell vía Cloudflare)</span>
           </label>
         </div>
       </div>
