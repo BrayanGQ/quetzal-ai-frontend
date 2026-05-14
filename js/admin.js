@@ -89,24 +89,36 @@ const admin = {
     if (!loading) {
       loading = document.createElement("div");
       loading.className = "loading-img";
-      loading.textContent = "Generando imagen con IA... (puede tardar 10-20 segundos)";
       imgWrap.appendChild(loading);
     }
+    loading.textContent = "Generando imagen con Flux (Cloudflare)... ~5 segundos";
     loading.style.display = "flex";
 
-    const visualPrompt = `${userPrompt}, professional photography, vibrant colors, social media post, high quality, appetizing`;
-    const seed = Math.floor(Math.random() * 10000);
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}?width=768&height=512&seed=${seed}&nologo=true`;
+    try {
+      // Llamar al backend (que a su vez llama a Cloudflare Workers AI)
+      const response = await fetch(`${QUETZAL_CONFIG.API_URL}/api/generar-imagen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt })
+      });
 
-    imgEl.onload = () => {
-      loading.style.display = "none";
-      imgEl.style.display = "block";
-      dlLink.href = url;
-    };
-    imgEl.onerror = () => {
-      loading.textContent = "⚠️ No se pudo generar la imagen. Pollinations.ai puede estar saturado, intentá de nuevo.";
-    };
-    imgEl.src = url;
+      const data = await response.json();
+
+      if (!data.success) throw new Error(data.error || 'Error al generar imagen');
+
+      // La imagen viene en base64 (data:image/png;base64,...)
+      imgEl.src = data.image;
+      dlLink.href = data.image;
+
+      imgEl.onload = () => {
+        loading.style.display = "none";
+        imgEl.style.display = "block";
+      };
+
+    } catch (error) {
+      console.error('[Imagen]', error);
+      loading.textContent = `⚠️ No se pudo generar la imagen: ${error.message}`;
+    }
   },
 
   clearGenerator() {
