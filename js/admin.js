@@ -222,10 +222,9 @@ const admin = {
   // -----------------------------
 
   _getFrontendBase() {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    return isLocalhost
-      ? `${window.location.protocol}//${window.location.host}`
-      : 'https://quetzal-ai.onrender.com';
+    // Detecta automáticamente el dominio actual del frontend
+    // (funciona tanto en localhost como en producción sin importar el dominio)
+    return `${window.location.protocol}//${window.location.host}`;
   },
 
   _getShareUrl(business) {
