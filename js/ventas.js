@@ -1,39 +1,29 @@
 /**
- * Quetzal AI — Módulo de Panel de Ventas
- *
- * Módulo FUNCIONAL con datos reales del usuario en localStorage
- * + 3 funciones de IA real (Llama 3.3 vía Groq):
- *   - Análisis automático de patrones
- *   - Predicción de próximos 7 días
- *   - Plan de acción personalizado
+ * Quetzal AI — Panel de Ventas (con Supabase)
+ * Las ventas se guardan en la base de datos del usuario logueado
  */
 
 const ventas = {
 
   sales: [],
-  insightsCache: null,
   isAnalyzing: false,
   isPredicting: false,
   isAdvising: false,
 
 
   // -----------------------------
-  //   PERSISTENCIA
+  //   PERSISTENCIA (vía API + Supabase)
   // -----------------------------
 
-  _save() {
-    localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.SALES, JSON.stringify(this.sales));
-  },
-
-  _load() {
-    const raw = localStorage.getItem(QUETZAL_CONFIG.STORAGE_KEYS.SALES);
-    if (raw) {
-      try {
-        this.sales = JSON.parse(raw);
-      } catch (e) {
-        this.sales = [];
+  async _loadFromAPI() {
+    try {
+      const response = await admin.apiCall('/api/sales');
+      const data = await response.json();
+      if (data.success) {
+        this.sales = data.sales || [];
       }
-    } else {
+    } catch (error) {
+      console.error('[Load sales]', error);
       this.sales = [];
     }
   },
@@ -43,15 +33,15 @@ const ventas = {
   //   AGREGAR / ELIMINAR VENTAS
   // -----------------------------
 
-  addSale() {
+  async addSale() {
     const productInput = document.getElementById("sale-product");
-    const qtyInput     = document.getElementById("sale-qty");
-    const priceInput   = document.getElementById("sale-price");
-    const dateInput    = document.getElementById("sale-date");
+    const qtyInput = document.getElementById("sale-qty");
+    const priceInput = document.getElementById("sale-price");
+    const dateInput = document.getElementById("sale-date");
 
     const product = productInput.value.trim();
-    const qty     = parseInt(qtyInput.value);
-    const price   = parseFloat(priceInput.value);
+    const qty = parseInt(qtyInput.value);
+    const price = parseFloat(priceInput.value);
     const dateStr = dateInput.value;
 
     if (!product) { admin._toast('⚠️ Indicá el nombre del producto', 'error'); productInput.focus(); return; }
@@ -60,64 +50,99 @@ const ventas = {
 
     const date = dateStr ? new Date(dateStr).toISOString() : new Date().toISOString();
 
-    this.sales.push({
-      id: 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      date, product, qty, price
-    });
+    try {
+      const response = await admin.apiCall('/api/sales', {
+        method: 'POST',
+        body: JSON.stringify({ product, qty, price, date })
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Error al registrar venta');
 
-    this._save();
-    this._renderAll();
+      this.sales.unshift(data.sale);
+      this._renderAll();
 
-    productInput.value = '';
-    qtyInput.value = '1';
-    priceInput.value = '';
+      productInput.value = '';
+      qtyInput.value = '1';
+      priceInput.value = '';
 
-    admin._toast('✅ Venta registrada correctamente');
+      admin._toast('✅ Venta registrada en la base de datos');
 
-    if (this.sales.length >= 3 && !this.isAnalyzing) {
-      this.requestAIAnalysis();
+      if (this.sales.length >= 3 && !this.isAnalyzing) {
+        this.requestAIAnalysis();
+      }
+    } catch (error) {
+      console.error('[Add sale]', error);
+      admin._toast(`⚠️ No se pudo registrar: ${error.message}`, 'error');
     }
   },
 
-  deleteSale(id) {
+  async deleteSale(id) {
     if (!confirm('¿Borrar esta venta del historial?')) return;
-    this.sales = this.sales.filter(s => s.id !== id);
-    this._save();
-    this._renderAll();
-    admin._toast('Venta eliminada');
+
+    try {
+      const response = await admin.apiCall(`/api/sales/${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+
+      this.sales = this.sales.filter(s => s.id !== id);
+      this._renderAll();
+      admin._toast('Venta eliminada');
+    } catch (error) {
+      console.error('[Delete sale]', error);
+      admin._toast(`⚠️ No se pudo borrar: ${error.message}`, 'error');
+    }
   },
 
-  loadSampleData() {
+  async loadSampleData() {
     if (this.sales.length > 0) {
       if (!confirm('Ya hay ventas registradas. ¿Reemplazar con datos de ejemplo?')) return;
+      await this.clearAll(true);
     }
-    this.sales = [...SAMPLE_SALES];
-    this._save();
-    this._renderAll();
-    this.requestAIAnalysis();
-    admin._toast('📋 Datos de ejemplo cargados');
+
+    try {
+      const response = await admin.apiCall('/api/sales/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ sales: SAMPLE_SALES })
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+
+      await this._loadFromAPI();
+      this._renderAll();
+      this.requestAIAnalysis();
+      admin._toast(`📋 ${data.count} ventas de ejemplo cargadas`);
+    } catch (error) {
+      console.error('[Load sample]', error);
+      admin._toast(`⚠️ No se pudo cargar: ${error.message}`, 'error');
+    }
   },
 
-  clearAll() {
-    if (!confirm('¿Borrar TODAS las ventas registradas?')) return;
-    this.sales = [];
-    this.insightsCache = null;
-    this._save();
-    this._renderAll();
-    this.closePrediction();
-    this.closeConsejos();
-    admin._toast('Todas las ventas fueron eliminadas');
+  async clearAll(skipConfirm = false) {
+    if (!skipConfirm && !confirm('¿Borrar TODAS las ventas registradas?')) return;
+
+    try {
+      const response = await admin.apiCall('/api/sales', { method: 'DELETE' });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+
+      this.sales = [];
+      this._renderAll();
+      this.closePrediction();
+      this.closeConsejos();
+      if (!skipConfirm) admin._toast('Todas las ventas fueron eliminadas');
+    } catch (error) {
+      console.error('[Clear all]', error);
+      admin._toast(`⚠️ No se pudo borrar: ${error.message}`, 'error');
+    }
   },
 
 
   // -----------------------------
-  //   KPIs
+  //   CÁLCULOS
   // -----------------------------
 
   _computeKPIs() {
-    if (this.sales.length === 0) {
-      return { totalRevenue: 0, totalSales: 0, avgTicket: 0, peakHour: '—' };
-    }
+    if (this.sales.length === 0) return { totalRevenue: 0, totalSales: 0, avgTicket: 0, peakHour: '—' };
 
     const totalRevenue = this.sales.reduce((sum, s) => sum + (s.qty * s.price), 0);
     const totalSales = this.sales.length;
@@ -143,7 +168,6 @@ const ventas = {
       const day = new Date(today);
       day.setDate(day.getDate() - i);
       day.setHours(0, 0, 0, 0);
-
       const dayEnd = new Date(day);
       dayEnd.setHours(23, 59, 59, 999);
 
@@ -151,18 +175,11 @@ const ventas = {
       const dayShort = dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
 
       const total = this.sales
-        .filter(s => {
-          const sd = new Date(s.date);
-          return sd >= day && sd <= dayEnd;
-        })
+        .filter(s => { const sd = new Date(s.date); return sd >= day && sd <= dayEnd; })
         .reduce((sum, s) => sum + (s.qty * s.price), 0);
 
       const dayOfWeek = day.getDay();
-      days.push({
-        label: dayShort,
-        amount: total,
-        weekend: dayOfWeek === 0 || dayOfWeek === 6
-      });
+      days.push({ label: dayShort, amount: total, weekend: dayOfWeek === 0 || dayOfWeek === 6 });
     }
     return days;
   },
@@ -182,7 +199,6 @@ const ventas = {
     const kpis = this._computeKPIs();
     const grid = document.getElementById("kpi-grid");
     if (!grid) return;
-
     grid.innerHTML = `
       <div class="kpi-card">
         <div class="kpi-label">Ingresos totales</div>
@@ -268,28 +284,21 @@ const ventas = {
       if (empty) empty.style.display = 'block';
       return;
     }
-
     if (empty) empty.style.display = 'none';
 
     const sorted = [...this.sales].sort((a, b) => new Date(b.date) - new Date(a.date));
-
     tbody.innerHTML = sorted.map(s => {
       const date = new Date(s.date);
-      const dateStr = date.toLocaleString('es-GT', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true
-      });
+      const dateStr = date.toLocaleString('es-GT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
       const total = (s.qty * s.price).toFixed(2);
-
-      return `
-        <tr>
-          <td>${this._escape(dateStr)}</td>
-          <td>${this._escape(s.product)}</td>
-          <td>${s.qty}</td>
-          <td>Q ${s.price.toFixed(2)}</td>
-          <td><strong>Q ${total}</strong></td>
-          <td><button class="btn-delete-row" onclick="ventas.deleteSale('${s.id}')" title="Eliminar">×</button></td>
-        </tr>
-      `;
+      return `<tr>
+        <td>${this._escape(dateStr)}</td>
+        <td>${this._escape(s.product)}</td>
+        <td>${s.qty}</td>
+        <td>Q ${s.price.toFixed(2)}</td>
+        <td><strong>Q ${total}</strong></td>
+        <td><button class="btn-delete-row" onclick="ventas.deleteSale('${s.id}')" title="Eliminar">×</button></td>
+      </tr>`;
     }).join('');
   },
 
@@ -313,51 +322,34 @@ const ventas = {
     container.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 analizando tus ${this.sales.length} ventas...</div>`;
 
     try {
-      const response = await fetch(`${QUETZAL_CONFIG.API_URL}/api/analizar-ventas`, {
+      const response = await admin.apiCall('/api/analizar-ventas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sales: this.sales })
+        body: JSON.stringify({})
       });
-
       const data = await response.json();
       this.isAnalyzing = false;
-
       if (!data.success) throw new Error(data.error || 'Error en análisis');
-
-      this.insightsCache = data.insights;
       this._renderInsights(data.insights);
-
     } catch (error) {
       this.isAnalyzing = false;
       console.error('[Análisis IA]', error);
-      container.innerHTML = `
-        <div class="insight-empty">
-          <p>⚠️ No se pudo conectar con la IA para el análisis.</p>
-          <button class="btn-secondary" style="margin-top:12px;" onclick="ventas.requestAIAnalysis()">Reintentar</button>
-        </div>
-      `;
+      container.innerHTML = `<div class="insight-empty"><p>⚠️ ${error.message}</p><button class="btn-secondary" style="margin-top:12px;" onclick="ventas.requestAIAnalysis()">Reintentar</button></div>`;
     }
   },
 
   _renderInsights(insights) {
     const container = document.getElementById("insights-container");
     if (!container || !Array.isArray(insights)) return;
-
-    container.innerHTML = insights.map(text => `
-      <div class="insight">
-        <div class="insight-text">${this._escape(text)}</div>
-      </div>
-    `).join('');
+    container.innerHTML = insights.map(text => `<div class="insight"><div class="insight-text">${this._escape(text)}</div></div>`).join('');
   },
 
 
   // -----------------------------
-  //   IA #2 — PREDICCIÓN PRÓXIMOS 7 DÍAS
+  //   IA #2 — PREDICCIÓN
   // -----------------------------
 
   async requestPrediction() {
     if (this.isPredicting) return;
-
     if (this.sales.length < 5) {
       admin._toast('⚠️ Necesitás al menos 5 ventas para una predicción confiable', 'error');
       return;
@@ -366,40 +358,29 @@ const ventas = {
     this.isPredicting = true;
     const card = document.getElementById("prediction-card");
     const content = document.getElementById("prediction-content");
-
     card.style.display = "block";
-    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 analizando patrones y proyectando los próximos 7 días...</div>`;
-
+    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 proyectando los próximos 7 días...</div>`;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     try {
-      const response = await fetch(`${QUETZAL_CONFIG.API_URL}/api/predecir-ventas`, {
+      const response = await admin.apiCall('/api/predecir-ventas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sales: this.sales })
+        body: JSON.stringify({})
       });
-
       const data = await response.json();
       this.isPredicting = false;
-
-      if (!data.success) throw new Error(data.error || 'Error en predicción');
-
+      if (!data.success) throw new Error(data.error);
       this._renderPrediction(data.prediction);
-
     } catch (error) {
       this.isPredicting = false;
-      console.error('[Predicción IA]', error);
-      content.innerHTML = `
-        <p style="color:#EF4444;padding:14px;">⚠️ No se pudo generar la predicción.</p>
-        <button class="btn-secondary" onclick="ventas.requestPrediction()">Reintentar</button>
-      `;
+      console.error('[Predicción]', error);
+      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
     }
   },
 
   _renderPrediction(p) {
     const content = document.getElementById("prediction-content");
     if (!content || !p) return;
-
     content.innerHTML = `
       <div class="prediction-grid">
         <div class="prediction-stat">
@@ -432,12 +413,11 @@ const ventas = {
 
 
   // -----------------------------
-  //   IA #3 — CONSEJOS PARA EL NEGOCIO
+  //   IA #3 — CONSEJOS
   // -----------------------------
 
   async requestConsejos() {
     if (this.isAdvising) return;
-
     if (this.sales.length < 3) {
       admin._toast('⚠️ Necesitás al menos 3 ventas para recibir consejos', 'error');
       return;
@@ -446,60 +426,37 @@ const ventas = {
     this.isAdvising = true;
     const card = document.getElementById("consejos-card");
     const content = document.getElementById("consejos-content");
-
     card.style.display = "block";
-    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 generando tu plan de acción personalizado...</div>`;
-
+    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 generando tu plan de acción...</div>`;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Obtener info del negocio del localStorage
-    let businessInfo = null;
     try {
-      const raw = localStorage.getItem(QUETZAL_CONFIG.STORAGE_KEYS.CONFIG);
-      if (raw) businessInfo = JSON.parse(raw);
-    } catch (e) {}
-
-    try {
-      const response = await fetch(`${QUETZAL_CONFIG.API_URL}/api/consejos-negocio`, {
+      const response = await admin.apiCall('/api/consejos-negocio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sales: this.sales, businessInfo })
+        body: JSON.stringify({})
       });
-
       const data = await response.json();
       this.isAdvising = false;
-
-      if (!data.success) throw new Error(data.error || 'Error en consejos');
-
+      if (!data.success) throw new Error(data.error);
       this._renderConsejos(data.consejos);
-
     } catch (error) {
       this.isAdvising = false;
-      console.error('[Consejos IA]', error);
-      content.innerHTML = `
-        <p style="color:#EF4444;padding:14px;">⚠️ No se pudieron generar los consejos.</p>
-        <button class="btn-secondary" onclick="ventas.requestConsejos()">Reintentar</button>
-      `;
+      console.error('[Consejos]', error);
+      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
     }
   },
 
   _renderConsejos(consejos) {
     const content = document.getElementById("consejos-content");
     if (!content || !Array.isArray(consejos)) return;
-
-    content.innerHTML = `
-      <div class="consejos-list">
-        ${consejos.map(c => `
-          <div class="consejo-item">
-            <div class="consejo-emoji">${this._escape(c.emoji || '💡')}</div>
-            <div>
-              <div class="consejo-titulo">${this._escape(c.titulo || '')}</div>
-              <div class="consejo-accion">${this._escape(c.accion || '')}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    content.innerHTML = `<div class="consejos-list">${consejos.map(c => `
+      <div class="consejo-item">
+        <div class="consejo-emoji">${this._escape(c.emoji || '💡')}</div>
+        <div>
+          <div class="consejo-titulo">${this._escape(c.titulo || '')}</div>
+          <div class="consejo-accion">${this._escape(c.accion || '')}</div>
+        </div>
+      </div>`).join('')}</div>`;
   },
 
   closeConsejos() {
@@ -531,9 +488,9 @@ const ventas = {
   //   INICIALIZACIÓN
   // -----------------------------
 
-  init() {
-    this._load();
+  async init() {
     this._setDefaultDate();
+    await this._loadFromAPI();
     this._renderAll();
 
     if (this.sales.length >= 3) {
@@ -542,6 +499,13 @@ const ventas = {
   }
 };
 
+// Se inicializa DESPUÉS de admin.init() (que valida la sesión)
 window.addEventListener("DOMContentLoaded", () => {
-  ventas.init();
+  // Esperar a que admin.init termine (necesitamos accessToken)
+  const waitForAdmin = setInterval(() => {
+    if (admin.accessToken) {
+      clearInterval(waitForAdmin);
+      ventas.init();
+    }
+  }, 100);
 });

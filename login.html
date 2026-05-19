@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión — Quetzal AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-container">
+
+    <!-- Lado izquierdo: imagen / branding -->
+    <div class="auth-brand-side">
+      <div class="auth-brand">
+        <img src="img/logo.png" alt="Quetzal AI" class="auth-logo" />
+        <h1>Quetzal AI</h1>
+        <p>Asistente inteligente para PYMES de Guatemala</p>
+      </div>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <span class="auth-feature-icon">💬</span>
+          <div>
+            <strong>Chatbot 24/7</strong>
+            <span>Atendé clientes mientras dormís</span>
+          </div>
+        </div>
+        <div class="auth-feature">
+          <span class="auth-feature-icon">✨</span>
+          <div>
+            <strong>Generador de Contenido</strong>
+            <span>Publicaciones con IA en segundos</span>
+          </div>
+        </div>
+        <div class="auth-feature">
+          <span class="auth-feature-icon">📊</span>
+          <div>
+            <strong>Análisis de Ventas</strong>
+            <span>Predicciones y consejos personalizados</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lado derecho: formulario -->
+    <div class="auth-form-side">
+
+      <!-- FORMULARIO DE LOGIN -->
+      <div id="form-login" class="auth-form">
+        <h2>Iniciá sesión</h2>
+        <p class="auth-subtitle">Bienvenido de vuelta a tu panel</p>
+
+        <div id="login-error" class="auth-error" style="display:none;"></div>
+
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" />
+        </div>
+
+        <div class="auth-field">
+          <label>Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+
+        <button class="auth-btn-primary" onclick="auth.login()" id="login-btn">
+          Iniciar sesión
+        </button>
+
+        <p class="auth-toggle">
+          ¿No tenés cuenta? <a href="#" onclick="auth.toggleForm('register')">Registrate gratis</a>
+        </p>
+      </div>
+
+      <!-- FORMULARIO DE REGISTRO -->
+      <div id="form-register" class="auth-form" style="display:none;">
+        <h2>Creá tu cuenta</h2>
+        <p class="auth-subtitle">Comenzá a usar la IA en tu negocio hoy</p>
+
+        <div id="register-error" class="auth-error" style="display:none;"></div>
+        <div id="register-success" class="auth-success" style="display:none;"></div>
+
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="register-email" placeholder="tu@email.com" autocomplete="email" />
+        </div>
+
+        <div class="auth-field">
+          <label>Contraseña</label>
+          <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+        </div>
+
+        <div class="auth-field">
+          <label>Confirmar contraseña</label>
+          <input type="password" id="register-password2" placeholder="Repetí tu contraseña" autocomplete="new-password" />
+        </div>
+
+        <button class="auth-btn-primary" onclick="auth.register()" id="register-btn">
+          Crear cuenta
+        </button>
+
+        <p class="auth-toggle">
+          ¿Ya tenés cuenta? <a href="#" onclick="auth.toggleForm('login')">Iniciá sesión</a>
+        </p>
+      </div>
+
+      <div class="auth-footer">
+        <a href="index.html">← Volver al inicio</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

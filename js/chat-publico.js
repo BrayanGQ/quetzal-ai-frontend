@@ -1,9 +1,11 @@
 /**
- * Quetzal AI — Chatbot público (lado del cliente)
+ * Quetzal AI — Chatbot público (lado del cliente final)
  *
- * Esta es la vista del CLIENTE FINAL del negocio. Toda la información
- * del sitio (nombre, productos, hero, etc.) se actualiza dinámicamente
- * según la configuración que el dueño guardó en el panel administrativo.
+ * Lee la configuración del negocio desde la cache de localStorage
+ * (que es actualizada por el admin.js cuando el dueño guarda su config).
+ *
+ * Toda la UI de la página (nombre, productos, hero, footer) se adapta
+ * dinámicamente al tipo y configuración del negocio.
  */
 
 const chatPublico = {
@@ -82,7 +84,6 @@ const chatPublico = {
       if (!data.success) throw new Error(data.error || 'Error desconocido');
 
       this._addMessage(data.response, "bot");
-
       this.conversationHistory.push({ role: 'user', content: message });
       this.conversationHistory.push({ role: 'assistant', content: data.response });
 
@@ -90,10 +91,7 @@ const chatPublico = {
       this._removeTypingIndicator(typingId);
       this.isWaiting = false;
       console.error('[Chat]', error);
-      this._addMessage(
-        `⚠️ Disculpá, en este momento no puedo responder. El servidor está caído o tardando demasiado.\n\nIntentá de nuevo en un momento.`,
-        "bot"
-      );
+      this._addMessage(`⚠️ Disculpá, en este momento no puedo responder. El servidor está caído o tardando demasiado.\n\nIntentá de nuevo en un momento.`, "bot");
     }
   },
 
@@ -104,22 +102,23 @@ const chatPublico = {
 
 
   // -----------------------------
-  //   RECUPERAR CONFIG DEL NEGOCIO
+  //   RECUPERAR CONFIG (DESDE CACHE LOCALSTORAGE)
   // -----------------------------
 
   _getBusinessInfo() {
-    const raw = localStorage.getItem(QUETZAL_CONFIG.STORAGE_KEYS.CONFIG);
+    // El admin.js guarda la config en BUSINESS_CACHE cada vez que el dueño guarda
+    const raw = localStorage.getItem(QUETZAL_CONFIG.STORAGE_KEYS.BUSINESS_CACHE);
     if (!raw) return null;
 
     try {
       const cfg = JSON.parse(raw);
       return {
-        name:     cfg.name,
-        type:     cfg.type,
+        name: cfg.name,
+        type: cfg.type,
         location: cfg.location,
-        hours:    cfg.hours,
+        hours: cfg.hours,
         delivery: cfg.delivery,
-        payment:  cfg.payment,
+        payment: cfg.payment,
         products: cfg.products
       };
     } catch (e) {
@@ -129,53 +128,52 @@ const chatPublico = {
 
 
   // -----------------------------
-  //   ACTUALIZAR LA UI COMPLETA SEGÚN EL NEGOCIO CONFIGURADO
+  //   ACTUALIZAR LA UI SEGÚN EL NEGOCIO
   // -----------------------------
 
   _updateBusinessUI() {
     const config = this._getBusinessInfo();
-    if (!config || !config.name) return;
+    if (!config || !config.name) {
+      // Si no hay config, mostrar mensaje amigable
+      const welcome = document.querySelector('#chat-messages .message.bot:first-child .bubble');
+      if (welcome) {
+        welcome.textContent = `¡Hola! 👋 Soy el asistente virtual. El dueño aún no terminó de configurar este chatbot. Por favor, vuelve a intentarlo más tarde.`;
+      }
+      return;
+    }
 
     const setText = (id, text) => {
       const el = document.getElementById(id);
       if (el && text) el.textContent = text;
     };
 
-    // === Nombre del negocio (varios lugares) ===
     setText("chat-biz-name", config.name);
     setText("biz-display-name", config.name);
     setText("biz-footer", `© ${config.name}` + (config.location ? ` · ${config.location}` : ''));
     setText("biz-banner-text",
       `Esta es una simulación de cómo el chatbot se vería en el sitio web de un negocio real (en este caso, ${config.name}).`);
 
-    // === Título de la pestaña del navegador ===
     document.title = `${config.name} — Atención al cliente`;
 
-    // === Tag del header (tipo + ubicación) ===
     const tagParts = [];
     if (config.type) tagParts.push(this._capitalize(config.type));
     if (config.location) tagParts.push(config.location);
     setText("biz-display-tag", tagParts.join(' · ') || 'Atención al cliente');
 
-    // === Emoji según tipo de negocio (header + avatar del chat) ===
     const emoji = this._getEmojiForType(config.type);
     setText("biz-emoji", emoji);
     setText("chat-avatar-emoji", emoji);
 
-    // === Hero adaptado al tipo de negocio ===
     setText("biz-hero-title", this._getHeroTitle(config.type, config.name));
     setText("biz-hero-text",
       `Tu negocio de confianza${config.location ? ' en ' + config.location : ''}. Atendemos tus consultas con nuestro asistente virtual las 24 horas.`);
 
-    // === Resúmenes de las 3 features ===
     setText("biz-delivery-summary", this._summarize(config.delivery, "Consultá zonas"));
     setText("biz-hours-summary", this._summarize(config.hours, "Consultá horarios"));
     setText("biz-payment-summary", this._summarize(config.payment, "Varias formas"));
 
-    // === Productos destacados (parsear del config) ===
     this._renderProducts(config.products);
 
-    // === Mensaje de bienvenida del chatbot ===
     const welcome = document.querySelector('#chat-messages .message.bot:first-child .bubble');
     if (welcome && config.name) {
       welcome.textContent = `¡Hola! 👋 Soy el asistente virtual de ${config.name}. Pregúntame sobre nuestros productos, horarios, entregas o lo que necesités. ¿En qué te puedo ayudar?`;
@@ -262,11 +260,6 @@ const chatPublico = {
   },
 
   _parseProductLine(line) {
-    // Ejemplos:
-    //   "Pan dulce: unidad Q 4, docena Q 40"
-    //   "Pastel de chocolate (porción) Q 25"
-    //   "Tortillas hechas a mano: docena Q 15"
-
     let name = line;
     let price = '';
 
@@ -282,13 +275,10 @@ const chatPublico = {
       }
     }
 
-    if (price.includes(',')) {
-      price = price.split(',')[0].trim();
-    }
+    if (price.includes(',')) price = price.split(',')[0].trim();
     if (!price) price = 'Consultá precio';
 
-    const emoji = this._getEmojiForProduct(name);
-    return { name, price, emoji };
+    return { name, price, emoji: this._getEmojiForProduct(name) };
   },
 
   _getEmojiForProduct(name) {
@@ -326,7 +316,6 @@ const chatPublico = {
   _addMessage(text, type) {
     const container = document.getElementById("chat-messages");
     if (!container) return;
-
     const msg = document.createElement("div");
     msg.className = `message ${type}`;
     msg.innerHTML = `<div class="bubble">${this._escape(text)}</div>`;
@@ -364,8 +353,6 @@ const chatPublico = {
 
   init() {
     this._updateBusinessUI();
-
-    // Auto-abrir el widget después de 1.5s para que el visitante lo vea
     setTimeout(() => {
       if (!this.isOpen) this.toggle();
     }, 1500);

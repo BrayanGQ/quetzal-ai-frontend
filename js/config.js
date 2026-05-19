@@ -1,37 +1,38 @@
 /**
  * Quetzal AI — Configuración del frontend
- *
- * IMPORTANTE: Cambiar API_URL por la URL real del backend cuando se despliegue.
- *
- * Local:        http://localhost:3000
- * En Render:    https://quetzal-ai-backend.onrender.com
  */
 
 const QUETZAL_CONFIG = {
 
-  // URL del backend.
-  // - Para desarrollo local: 'http://localhost:3000'
-  // - Para producción: la URL que te dé Render (ej: 'https://quetzal-ai-backend.onrender.com')
+  // URL del backend en producción
   API_URL: 'https://quetzal-ai-backend.onrender.com',
 
-  // Versión actual (se muestra en el header)
-  VERSION: 'v1.1.0',
+  // Supabase — credenciales públicas (seguras de exponer)
+  SUPABASE_URL: 'https://jaiounvcnvzebnwmxclq.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_T6O6CYecB0z1wReRsrzqvg_CVk0VcjD',
 
-  // Llaves de localStorage
+  VERSION: 'v2.0.0',
+
   STORAGE_KEYS: {
-    SALES:        'quetzal_sales',
-    CONFIG:       'quetzal_business_config',
-    CHAT_HISTORY: 'quetzal_chat_history'
+    // Caches locales (no son la fuente de verdad, solo para UX rápida)
+    BUSINESS_CACHE: 'quetzal_business_cache',
+    USER_CACHE: 'quetzal_user_cache'
   }
 };
 
-// Auto-detectar entorno: si estás en localhost, usa localhost; si no, asume producción
+// Auto-detectar entorno
 if (typeof window !== 'undefined') {
   const hostname = window.location.hostname;
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '') {
-    // Desarrollo local — usa el backend local
-    QUETZAL_CONFIG.API_URL = 'https://quetzal-ai-backend.onrender.com';
+    QUETZAL_CONFIG.API_URL = 'http://localhost:3000';
   }
-  // Si NO es localhost, mantiene el valor de arriba (producción)
-  // → cambiar manualmente a la URL de Render antes de desplegar
+}
+
+// Cliente Supabase (se inicializa cuando se carga el SDK)
+let supabaseClient = null;
+if (typeof window !== 'undefined' && window.supabase) {
+  supabaseClient = window.supabase.createClient(
+    QUETZAL_CONFIG.SUPABASE_URL,
+    QUETZAL_CONFIG.SUPABASE_ANON_KEY
+  );
 }

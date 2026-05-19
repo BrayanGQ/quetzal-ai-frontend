@@ -48,13 +48,16 @@
 
       <div class="nav-section-label" style="margin-top: 28px;">Mi Cuenta</div>
       <div class="nav-info">
-        <div class="nav-info-label">Estudiante</div>
-        <div class="nav-info-value">Brayan A. Gómez Q.</div>
+        <div class="nav-info-label">Sesión activa</div>
+        <div class="nav-info-value" id="user-email">cargando...</div>
       </div>
-      <div class="nav-info">
-        <div class="nav-info-label">Universidad</div>
-        <div class="nav-info-value">UMG Guatemala</div>
-      </div>
+
+      <a class="nav-item logout-btn" onclick="auth.logout()" style="margin-top:8px;cursor:pointer;">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h3M11 11l3-3-3-3M14 8H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        Cerrar sesión
+      </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -119,9 +122,7 @@
       </div>
 
       <!-- KPIs -->
-      <div class="kpi-grid" id="kpi-grid">
-        <!-- Se llenan dinámicamente con JS -->
-      </div>
+      <div class="kpi-grid" id="kpi-grid"></div>
 
       <!-- BOTONES IA AVANZADA -->
       <div class="ai-actions-row">
@@ -290,32 +291,26 @@
           <label>Nombre del negocio</label>
           <input type="text" id="biz-name" placeholder="Ej: Tienda Don José" />
         </div>
-
         <div class="form-group">
           <label>Tipo de negocio</label>
           <input type="text" id="biz-type" placeholder="Ej: tienda de abarrotes" />
         </div>
-
         <div class="form-group">
           <label>Ubicación</label>
           <input type="text" id="biz-location" placeholder="Ej: Zona 11, Ciudad de Guatemala" />
         </div>
-
         <div class="form-group form-group-wide">
           <label>Horarios de atención</label>
           <input type="text" id="biz-hours" placeholder="Ej: Lunes a sábado 7 AM - 8 PM, domingo 8 AM - 2 PM" />
         </div>
-
         <div class="form-group form-group-wide">
           <label>Información de entregas</label>
           <textarea id="biz-delivery" rows="3" placeholder="Ej: Entregas en zonas 11, 12 y 13. Envío gratis en pedidos mayores a Q 100..."></textarea>
         </div>
-
         <div class="form-group form-group-wide">
           <label>Formas de pago aceptadas</label>
           <textarea id="biz-payment" rows="2" placeholder="Ej: Efectivo, tarjeta de débito y crédito, Tigo Money..."></textarea>
         </div>
-
         <div class="form-group form-group-wide">
           <label>Productos y precios <span class="hint">(uno por línea)</span></label>
           <textarea id="biz-products" rows="6" placeholder="Azúcar blanca: libra Q 8, arroba Q 180&#10;Tortillas hechas a mano: docena Q 15&#10;Pan francés: unidad Q 5, docena Q 50"></textarea>
@@ -335,8 +330,11 @@
 
   </main>
 
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/ventas.js"></script>
 </body>
