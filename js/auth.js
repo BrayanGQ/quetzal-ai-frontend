@@ -4,10 +4,6 @@
 
 const auth = {
 
-  // -----------------------------
-  //   INICIALIZACIÓN
-  // -----------------------------
-
   _client: null,
 
   _getClient() {
@@ -77,13 +73,11 @@ const auth = {
 
       if (error) throw error;
 
-      // Guardar info del usuario en caché para UX
       localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.USER_CACHE, JSON.stringify({
         email: data.user.email,
         id: data.user.id
       }));
 
-      // Redirigir al panel
       window.location.href = 'admin.html';
 
     } catch (error) {
@@ -131,7 +125,6 @@ const auth = {
 
       if (error) throw error;
 
-      // Como desactivamos "Confirm email", el usuario ya está logueado
       if (data.session) {
         localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.USER_CACHE, JSON.stringify({
           email: data.user.email,
@@ -139,7 +132,6 @@ const auth = {
         }));
         window.location.href = 'admin.html?welcome=1';
       } else {
-        // Caso poco común: la confirmación está activada
         this._showSuccess('register-success', 'Cuenta creada. Revisá tu email para confirmar.');
         btn.disabled = false;
         btn.textContent = 'Crear cuenta';
@@ -169,7 +161,6 @@ const auth = {
       window.location.href = 'login.html';
     } catch (error) {
       console.error('[Logout]', error);
-      // Forzar limpieza igualmente
       localStorage.clear();
       window.location.href = 'login.html';
     }
@@ -177,7 +168,7 @@ const auth = {
 
 
   // -----------------------------
-  //   OBTENER USUARIO ACTUAL (sesión activa)
+  //   OBTENER USUARIO ACTUAL
   // -----------------------------
 
   async getCurrentUser() {
@@ -203,7 +194,7 @@ const auth = {
 
 
   // -----------------------------
-  //   PROTEGER PÁGINA (redirige si no hay sesión)
+  //   PROTEGER PÁGINA
   // -----------------------------
 
   async requireAuth() {
@@ -213,5 +204,41 @@ const auth = {
       return null;
     }
     return user;
+  },
+
+
+  // -----------------------------
+  //   ACTUALIZAR BOTONES DE LA LANDING SEGÚN SESIÓN
+  // -----------------------------
+
+  async updateLandingButtons() {
+    const user = await this.getCurrentUser();
+    const buttons = document.querySelectorAll('[data-auth-button]');
+
+    buttons.forEach(btn => {
+      const target = btn.getAttribute('data-auth-button');
+
+      if (target === 'primary') {
+        if (user) {
+          btn.textContent = 'Ir a mi panel →';
+          btn.href = 'admin.html';
+        } else {
+          // Mantener el texto actual o usar default
+          if (!btn.textContent.includes('Crear') && !btn.textContent.includes('Entrar')) {
+            btn.textContent = 'Crear cuenta gratis';
+          }
+          btn.href = 'login.html';
+        }
+      } else if (target === 'secondary') {
+        if (user) {
+          btn.textContent = 'Cerrar sesión';
+          btn.href = '#';
+          btn.onclick = (e) => { e.preventDefault(); auth.logout(); };
+        } else {
+          btn.textContent = 'Iniciar sesión';
+          btn.href = 'login.html';
+        }
+      }
+    });
   }
 };

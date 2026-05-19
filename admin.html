@@ -46,6 +46,13 @@
         Configurar Chatbot
       </a>
 
+      <a class="nav-item" data-tab="widget" onclick="admin.switchTab('widget', this)">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4h8v8H4z M2 2v2 M14 2v2 M2 12v2 M14 12v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        Mi Widget
+      </a>
+
       <div class="nav-section-label" style="margin-top: 28px;">Mi Cuenta</div>
       <div class="nav-info">
         <div class="nav-info-label">Sesión activa</div>
@@ -328,6 +335,191 @@
       </div>
     </section>
 
+    <!-- =================== TAB: MI WIDGET =================== -->
+    <section class="tab-panel" id="tab-widget">
+      <div class="panel-intro">
+        <h2>Compartí tu chatbot <span class="status-pill status-ok">Listo para compartir</span></h2>
+        <p>Tu chatbot ya está activo. Compartilo con tus clientes a través de un link, código QR o redes sociales — todo sin saber programación.</p>
+      </div>
+
+      <!-- Estado: sin configuración -->
+      <div id="widget-no-config" class="config-note" style="display:none;">
+        <strong>⚠️ Configurá tu negocio primero</strong><br>
+        Andá al tab <em>"Configurar Chatbot"</em>, llená la información de tu negocio y guardá. Después volvé acá.
+      </div>
+
+      <div id="widget-content">
+
+        <!-- ============ SECCIÓN 1: TU LINK ============ -->
+        <div class="share-section">
+          <div class="share-section-header">
+            <div class="share-icon-circle share-icon-link">🔗</div>
+            <div>
+              <h3>Tu link único</h3>
+              <p>Este es el link de tu chatbot. Cualquier cliente que entre acá puede hablar con tu asistente virtual.</p>
+            </div>
+          </div>
+
+          <div class="share-link-row">
+            <div class="share-link-display" id="share-link-display">cargando...</div>
+            <button class="btn-copy-link" onclick="admin.copyShareLink()" id="btn-copy-link">
+              <span>📋</span> Copiar
+            </button>
+          </div>
+
+          <!-- Editar slug -->
+          <div class="slug-editor">
+            <div class="slug-editor-header" onclick="admin.toggleSlugEditor()">
+              <span>✏️ Personalizar mi link</span>
+              <span class="slug-toggle-arrow" id="slug-arrow">▼</span>
+            </div>
+            <div class="slug-editor-body" id="slug-editor-body" style="display:none;">
+              <p class="slug-editor-help">
+                Hacé tu link más fácil de recordar. Solo letras, números y guiones.
+              </p>
+              <div class="slug-input-row">
+                <span class="slug-prefix" id="slug-prefix">quetzal-ai.com/c/</span>
+                <input type="text" id="slug-input" placeholder="mi-negocio" maxlength="60" />
+              </div>
+              <div class="slug-status" id="slug-status"></div>
+              <div class="slug-actions">
+                <button class="btn-primary" onclick="admin.saveSlug()" id="btn-save-slug">Guardar nuevo link</button>
+                <button class="btn-secondary" onclick="admin.toggleSlugEditor()">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+          <a href="chat.html" target="_blank" class="btn-preview" id="btn-preview-link">
+            👀 Ver mi chatbot →
+          </a>
+        </div>
+
+
+        <!-- ============ SECCIÓN 2: COMPARTIR EN REDES ============ -->
+        <div class="share-section">
+          <div class="share-section-header">
+            <div class="share-icon-circle share-icon-share">📲</div>
+            <div>
+              <h3>Compartilo en redes sociales</h3>
+              <p>Click en cualquier red social y se abrirá lista para publicar tu link con un mensaje atractivo.</p>
+            </div>
+          </div>
+
+          <div class="social-buttons">
+            <button class="btn-social btn-whatsapp" onclick="admin.shareWhatsApp()">
+              <div class="btn-social-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.693.625.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+              </div>
+              <span>WhatsApp</span>
+            </button>
+
+            <button class="btn-social btn-facebook" onclick="admin.shareFacebook()">
+              <div class="btn-social-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+              </div>
+              <span>Facebook</span>
+            </button>
+
+            <button class="btn-social btn-instagram" onclick="admin.shareInstagram()">
+              <div class="btn-social-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+              </div>
+              <span>Instagram</span>
+            </button>
+
+            <button class="btn-social btn-twitter" onclick="admin.shareTwitter()">
+              <div class="btn-social-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </div>
+              <span>X / Twitter</span>
+            </button>
+          </div>
+
+          <div class="share-tip">
+            💡 <strong>Tip:</strong> Pegá el link en la bio de tu Instagram, en tu estado de WhatsApp Business, o en tu página de Facebook. Tus clientes podrán preguntarte cualquier cosa, 24 horas al día.
+          </div>
+        </div>
+
+
+        <!-- ============ SECCIÓN 3: CÓDIGO QR ============ -->
+        <div class="share-section">
+          <div class="share-section-header">
+            <div class="share-icon-circle share-icon-qr">📷</div>
+            <div>
+              <h3>Código QR para imprimir</h3>
+              <p>Descargá el QR de tu chatbot y pegalo en tu mostrador, tarjetas o flyers. Tus clientes lo escanean y abren el chat.</p>
+            </div>
+          </div>
+
+          <div class="qr-row">
+            <div class="qr-display">
+              <div id="qr-container">
+                <div class="qr-loading">Generando QR...</div>
+              </div>
+            </div>
+            <div class="qr-actions">
+              <div class="qr-tip">
+                <strong>📌 Ideas para tu QR:</strong>
+                <ul>
+                  <li>Pegalo en tu mostrador o caja</li>
+                  <li>Imprimilo en tus tarjetas de presentación</li>
+                  <li>Sumalo a tus flyers y volantes</li>
+                  <li>Ponelo en tu local visible para clientes</li>
+                </ul>
+              </div>
+              <button class="btn-primary btn-download-qr" onclick="admin.downloadQR()">
+                ⬇️ Descargar QR
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ============ SECCIÓN 4 (AVANZADA): WIDGET EMBEBIBLE ============ -->
+        <div class="advanced-section">
+          <div class="advanced-header" onclick="admin.toggleAdvanced()">
+            <div>
+              <h3>💻 ¿Tenés tu propio sitio web?</h3>
+              <p>Opcional · Solo para dueños con sitio web propio (WordPress, Wix, sitio a mano)</p>
+            </div>
+            <span class="advanced-toggle-arrow" id="advanced-arrow">▼</span>
+          </div>
+
+          <div class="advanced-body" id="advanced-body" style="display:none;">
+            <p class="advanced-intro">
+              Si ya tenés tu sitio web (ejemplo: <code>mipanaderia.com</code>), podés pegar este código y el chatbot aparecerá automáticamente en tu sitio.
+            </p>
+
+            <div class="widget-code-block">
+              <pre class="widget-code"><code id="widget-code-text"></code></pre>
+              <button class="btn-copy-code" onclick="admin.copyWidgetCode()">📋 Copiar código</button>
+            </div>
+
+            <details class="widget-instructions">
+              <summary>📘 ¿Cómo instalo el código?</summary>
+              <ol class="widget-steps">
+                <li><strong>Copiá el código</strong> de arriba.</li>
+                <li><strong>Entrá al editor de tu sitio web.</strong></li>
+                <li><strong>Pegalo</strong> justo antes de la etiqueta <code>&lt;/body&gt;</code>.</li>
+                <li><strong>Guardá y publicá</strong> tu sitio.</li>
+                <li><strong>¡Listo!</strong> El chatbot aparecerá flotando abajo a la derecha.</li>
+              </ol>
+              <p class="advanced-note">¿No tenés sitio web? <strong>No te preocupes</strong> — con tu link y el QR ya tenés todo lo que necesitás.</p>
+            </details>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- Supabase SDK -->
@@ -335,6 +527,7 @@
   <script src="js/config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/ventas.js"></script>
 </body>

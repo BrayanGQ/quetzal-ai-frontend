@@ -3,151 +3,354 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atención al cliente</title>
+  <title>Demo del negocio | Quetzal AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body class="public-body">
 
-  <!-- DEMO BANNER -->
-  <div class="demo-banner">
+  <!-- BANNER DE DEMO (solo visible cuando viene del panel admin) -->
+  <div class="demo-banner" id="demo-banner">
     <div class="demo-banner-content">
-      <strong>🎬 Demo:</strong>
-      <span id="biz-banner-text">Esta es una simulación de cómo el chatbot se vería en el sitio web de un negocio real.</span>
-      <a href="admin.html" class="demo-banner-link">← Volver al panel de Quetzal AI</a>
+      <span>🎬</span>
+      <strong>Vista previa:</strong>
+      <span id="biz-banner-text">Así se vería el chatbot en el sitio web de tu negocio.</span>
+      <a href="admin.html" class="demo-banner-link">← Volver al panel</a>
     </div>
   </div>
 
-  <!-- SIMULATED BUSINESS WEBSITE -->
+  <!-- SITIO SIMULADO DEL NEGOCIO (se adapta según el tipo) -->
   <div class="business-site">
 
-    <!-- Business header (simulated) -->
     <header class="business-header">
       <div class="business-brand">
         <div class="business-emoji" id="biz-emoji">🏪</div>
         <div>
-          <div class="business-title" id="biz-display-name">Tienda Don José</div>
-          <div class="business-tag" id="biz-display-tag">Abarrotes · Zona 11, Guatemala</div>
+          <div class="business-title" id="biz-display-name">Cargando...</div>
+          <div class="business-tag" id="biz-display-tag">Atención al cliente</div>
         </div>
       </div>
       <nav class="business-nav">
         <a href="#" class="active">Inicio</a>
-        <a href="#">Productos</a>
-        <a href="#">Contacto</a>
+        <a href="#productos">Productos</a>
+        <a href="#contacto">Contacto</a>
       </nav>
     </header>
 
-    <!-- Hero -->
     <section class="business-hero">
       <h1 id="biz-hero-title">Productos frescos, a la puerta de tu casa</h1>
-      <p id="biz-hero-text">Tu negocio de confianza. Atendemos tus consultas con nuestro asistente virtual.</p>
+      <p id="biz-hero-text">Tu negocio de confianza. Atendemos tus consultas las 24 horas.</p>
       <div class="business-features">
         <div class="biz-feature">
           <div class="biz-feature-icon">🛵</div>
           <div>
-            <strong>Entregas a domicilio</strong>
+            <strong>Entregas</strong>
             <span id="biz-delivery-summary">Consultá zonas</span>
           </div>
         </div>
         <div class="biz-feature">
           <div class="biz-feature-icon">⏰</div>
           <div>
-            <strong>Horario amplio</strong>
+            <strong>Horarios</strong>
             <span id="biz-hours-summary">Consultá horarios</span>
           </div>
         </div>
         <div class="biz-feature">
           <div class="biz-feature-icon">💳</div>
           <div>
-            <strong>Múltiples pagos</strong>
+            <strong>Formas de pago</strong>
             <span id="biz-payment-summary">Varias formas</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Mock product grid (dinámico) -->
-    <section class="business-products">
-      <h2>Productos destacados</h2>
+    <section class="business-products" id="productos">
+      <h2>Nuestros productos</h2>
       <div class="product-grid" id="biz-product-grid">
-        <!-- Se rellena dinámicamente con JS -->
+        <!-- Productos se generan dinámicamente -->
       </div>
     </section>
 
-    <footer class="business-footer">
-      <p id="biz-footer">© Tienda Don José</p>
-      <p class="powered">Asistente virtual con IA, impulsado por <a href="index.html">Quetzal AI</a></p>
+    <footer class="business-footer" id="contacto">
+      <div id="biz-footer">© Negocio</div>
+      <div class="powered">
+        Sitio simulado · Powered by <a href="index.html">Quetzal AI</a>
+      </div>
     </footer>
 
   </div>
 
-  <!-- CHATBOT WIDGET (siempre visible flotante) -->
-  <div id="chat-widget" class="chat-widget">
-
-    <!-- Botón flotante para abrir/cerrar -->
-    <button id="chat-toggle" class="chat-toggle" onclick="chatPublico.toggle()" aria-label="Abrir chat">
-      <svg id="chat-icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" fill="white"/>
-        <circle cx="9" cy="10" r="1.5" fill="white"/>
-        <circle cx="12" cy="10" r="1.5" fill="white"/>
-        <circle cx="15" cy="10" r="1.5" fill="white"/>
-      </svg>
-      <svg id="chat-icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:none;">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="white"/>
-      </svg>
-      <span class="chat-toggle-pulse"></span>
-    </button>
-
-    <!-- Ventana de chat -->
-    <div id="chat-window" class="chat-window">
-      <div class="chat-window-header">
-        <div class="chat-avatar-wrap">
-          <div class="chat-avatar-public" id="chat-avatar-emoji">🏪</div>
-          <div class="chat-status-online"></div>
-        </div>
-        <div class="chat-info-public">
-          <div class="chat-business-name" id="chat-biz-name">Tienda Don José</div>
-          <div class="chat-status-text">
-            <span class="chat-online-dot"></span>
-            En línea — responde al instante
-          </div>
-        </div>
-        <div class="chat-powered">
-          <span class="powered-text">Con</span>
-          <img src="img/logo.png" alt="Quetzal AI" class="powered-logo" />
-          <span class="powered-name">Quetzal AI</span>
-        </div>
-      </div>
-
-      <div id="chat-messages" class="chat-messages-public">
-        <div class="message bot">
-          <div class="bubble">¡Hola! 👋 Soy el asistente virtual. Pregúntame sobre nuestros productos, horarios, entregas o lo que necesités. ¿En qué te puedo ayudar?</div>
-        </div>
-      </div>
-
-      <div class="chat-suggestions-public" id="chat-suggestions">
-        <button class="chip" onclick="chatPublico.quickAsk('¿Cuál es el horario?')">¿Horarios?</button>
-        <button class="chip" onclick="chatPublico.quickAsk('¿Hacen entregas a domicilio?')">¿Entregas?</button>
-        <button class="chip" onclick="chatPublico.quickAsk('¿Cuáles son sus productos?')">¿Productos?</button>
-        <button class="chip" onclick="chatPublico.quickAsk('¿Aceptan tarjeta?')">¿Aceptan tarjeta?</button>
-      </div>
-
-      <div class="chat-input-row-public">
-        <input type="text" id="chat-input" placeholder="Escribe tu pregunta..." onkeypress="if(event.key==='Enter') chatPublico.sendMessage()" />
-        <button class="btn-send-public" onclick="chatPublico.sendMessage()" aria-label="Enviar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>
-          </svg>
-        </button>
+  <!-- ESTADO: SIN NEGOCIO CONFIGURADO -->
+  <div id="no-business-state" style="display:none;">
+    <div style="min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 40px 20px; text-align:center;">
+      <div style="max-width: 420px;">
+        <div style="font-size:64px; margin-bottom:16px;">🤔</div>
+        <h2 style="font-size:22px; color:#1E3A5F; margin-bottom:10px;">Configurá tu negocio primero</h2>
+        <p style="color:#64748B; line-height:1.5; margin-bottom:20px;">
+          Para ver esta vista previa con la info de tu negocio, andá al panel, configurá tu chatbot y volvé acá.
+        </p>
+        <a href="admin.html" style="display:inline-block; padding:12px 24px; background:#1E3A5F; color:white; border-radius:10px; text-decoration:none; font-weight:600;">
+          Ir al panel →
+        </a>
       </div>
     </div>
-
   </div>
 
+  <!-- Supabase SDK + Config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/chat-publico.js"></script>
+
+  <script>
+    /**
+     * chat-publico.html — Demo del sitio web del negocio
+     *
+     * Se adapta automáticamente al negocio del usuario logueado
+     * (o al ?biz=ID si se pasa como query param).
+     *
+     * El widget se carga al final usando widget.js con el business_id.
+     */
+    (async function() {
+      'use strict';
+
+      // ============ HELPERS ============
+
+      function escape(text) {
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+      }
+
+      function summarize(text, fallback, maxWords = 7) {
+        if (!text) return fallback;
+        const first = text.split(/[.!?]/)[0].trim();
+        const words = first.split(/\s+/);
+        if (words.length <= maxWords) return first;
+        return words.slice(0, maxWords).join(' ') + '...';
+      }
+
+      function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      function getEmojiForType(type) {
+        if (!type) return '🏪';
+        const t = type.toLowerCase();
+        if (t.includes('panaderia') || t.includes('panadería') || t.includes('pan')) return '🥖';
+        if (t.includes('comedor') || t.includes('restaurante') || t.includes('comida')) return '🍽️';
+        if (t.includes('cafe') || t.includes('café') || t.includes('cafetería')) return '☕';
+        if (t.includes('belleza') || t.includes('salon') || t.includes('salón') || t.includes('peluquer')) return '💇';
+        if (t.includes('farmacia')) return '💊';
+        if (t.includes('libreria') || t.includes('librería')) return '📚';
+        if (t.includes('ferreteria') || t.includes('ferretería')) return '🔧';
+        if (t.includes('veterinaria') || t.includes('mascota')) return '🐾';
+        if (t.includes('pizza')) return '🍕';
+        if (t.includes('flor')) return '🌸';
+        if (t.includes('taller') || t.includes('mecánica')) return '🔩';
+        if (t.includes('ropa') || t.includes('boutique')) return '👕';
+        if (t.includes('helado')) return '🍦';
+        if (t.includes('fruta') || t.includes('verduler')) return '🥬';
+        return '🏪';
+      }
+
+      function getHeroTitle(type, name) {
+        if (!type) return `Bienvenido a ${name}`;
+        const t = type.toLowerCase();
+        if (t.includes('panaderia') || t.includes('panadería')) return 'Pan recién horneado, hecho con amor';
+        if (t.includes('comedor') || t.includes('restaurante')) return 'Comida casera, como en tu casa';
+        if (t.includes('cafe') || t.includes('café')) return 'El mejor café de la zona';
+        if (t.includes('belleza') || t.includes('salon')) return 'Lucí radiante con nosotros';
+        if (t.includes('farmacia')) return 'Tu salud, nuestra prioridad';
+        if (t.includes('libreria')) return 'Libros, útiles y mucho más';
+        if (t.includes('ferreteria')) return 'Todo para tu obra y hogar';
+        if (t.includes('veterinaria')) return 'Cuidamos a tus mejores amigos';
+        if (t.includes('pizza')) return 'Las mejores pizzas de la zona';
+        if (t.includes('flor')) return 'Flores frescas para cada ocasión';
+        if (t.includes('taller')) return 'Tu vehículo en buenas manos';
+        if (t.includes('ropa') || t.includes('boutique')) return 'Vestí tu mejor versión';
+        if (t.includes('helado')) return 'Postres y helados artesanales';
+        if (t.includes('fruta') || t.includes('verduler')) return 'Frutas y verduras frescas';
+        return 'Productos frescos, a la puerta de tu casa';
+      }
+
+      function getEmojiForProduct(name) {
+        if (!name) return '🛒';
+        const n = name.toLowerCase();
+        if (n.includes('pan dulce') || n.includes('shecas') || n.includes('champurrada')) return '🍩';
+        if (n.includes('pan')) return '🍞';
+        if (n.includes('tortilla')) return '🌽';
+        if (n.includes('pastel') || n.includes('torta')) return '🎂';
+        if (n.includes('galleta')) return '🍪';
+        if (n.includes('cafe') || n.includes('café')) return '☕';
+        if (n.includes('jugo') || n.includes('refresco') || n.includes('agua')) return '🥤';
+        if (n.includes('frijol')) return '🫘';
+        if (n.includes('azúcar') || n.includes('azucar')) return '🍬';
+        if (n.includes('leche')) return '🥛';
+        if (n.includes('huevo')) return '🥚';
+        if (n.includes('queso')) return '🧀';
+        if (n.includes('arroz')) return '🍚';
+        if (n.includes('flor') || n.includes('rosa')) return '🌹';
+        if (n.includes('libro') || n.includes('cuaderno')) return '📓';
+        if (n.includes('pizza')) return '🍕';
+        if (n.includes('hamburguesa')) return '🍔';
+        if (n.includes('shampoo') || n.includes('champú')) return '🧴';
+        if (n.includes('medicina') || n.includes('pastilla')) return '💊';
+        if (n.includes('helado')) return '🍦';
+        if (n.includes('fruta') || n.includes('manzana') || n.includes('banano')) return '🍎';
+        return '🛒';
+      }
+
+      function parseProductLine(line) {
+        let name = line, price = '';
+        if (line.includes(':')) {
+          const parts = line.split(':');
+          name = parts[0].trim();
+          price = parts.slice(1).join(':').trim();
+        } else {
+          const match = line.match(/(.*?)(Q\s*\d.*)/i);
+          if (match) { name = match[1].trim(); price = match[2].trim(); }
+        }
+        if (price.includes(',')) price = price.split(',')[0].trim();
+        if (!price) price = 'Consultá precio';
+        return { name, price, emoji: getEmojiForProduct(name) };
+      }
+
+      // ============ OBTENER BUSINESS_ID ============
+
+      async function getBusinessId() {
+        // 1. Buscar en URL ?biz=
+        const params = new URLSearchParams(window.location.search);
+        const queryBiz = params.get('biz');
+        if (queryBiz) return queryBiz;
+
+        // 2. Si hay sesión activa, obtener el negocio del usuario
+        try {
+          const client = window.supabase.createClient(
+            QUETZAL_CONFIG.SUPABASE_URL,
+            QUETZAL_CONFIG.SUPABASE_ANON_KEY
+          );
+          const { data: { session } } = await client.auth.getSession();
+          if (session) {
+            const { data } = await client
+              .from('businesses')
+              .select('id, slug')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            if (data?.id) return data.slug || data.id;
+          }
+        } catch (e) {
+          console.warn('No se pudo obtener business_id:', e);
+        }
+
+        return null;
+      }
+
+      // ============ CARGAR NEGOCIO ============
+
+      async function loadBusiness(identifier) {
+        try {
+          const response = await fetch(`${QUETZAL_CONFIG.API_URL}/api/public/business/${identifier}`);
+          const data = await response.json();
+          if (!data.success || !data.business) return null;
+          return data.business;
+        } catch (e) {
+          console.error('Load business error:', e);
+          return null;
+        }
+      }
+
+      // ============ APLICAR DATOS DEL NEGOCIO AL HTML ============
+
+      function applyBusinessToUI(config) {
+        const setText = (id, text) => {
+          const el = document.getElementById(id);
+          if (el && text) el.textContent = text;
+        };
+
+        setText('biz-display-name', config.name);
+        setText('biz-footer', `© ${config.name}` + (config.location ? ` · ${config.location}` : ''));
+        setText('biz-banner-text',
+          `Esta es una vista previa de cómo se vería ${config.name} con el chatbot embebido.`);
+
+        document.title = `${config.name} | Demo de Quetzal AI`;
+
+        const tagParts = [];
+        if (config.type) tagParts.push(capitalize(config.type));
+        if (config.location) tagParts.push(config.location);
+        setText('biz-display-tag', tagParts.join(' · ') || 'Atención al cliente');
+
+        const emoji = getEmojiForType(config.type);
+        setText('biz-emoji', emoji);
+
+        setText('biz-hero-title', getHeroTitle(config.type, config.name));
+        setText('biz-hero-text',
+          `Tu negocio de confianza${config.location ? ' en ' + config.location : ''}. Atendemos tus consultas con nuestro asistente virtual las 24 horas.`);
+
+        setText('biz-delivery-summary', summarize(config.delivery, 'Consultá zonas'));
+        setText('biz-hours-summary', summarize(config.hours, 'Consultá horarios'));
+        setText('biz-payment-summary', summarize(config.payment, 'Varias formas'));
+
+        // Productos
+        const grid = document.getElementById('biz-product-grid');
+        if (!config.products || !config.products.trim()) {
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #94A3B8; padding: 30px;">Pronto vas a ver nuestros productos aquí. Mientras tanto, preguntá al asistente virtual.</p>';
+        } else {
+          const lines = config.products.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+          const products = lines.slice(0, 4).map(line => parseProductLine(line));
+          grid.innerHTML = products.map(p => `
+            <div class="product-card">
+              <div class="product-img">${p.emoji}</div>
+              <h3>${escape(p.name)}</h3>
+              <p class="product-price">${escape(p.price)}</p>
+            </div>
+          `).join('');
+        }
+      }
+
+      // ============ CARGAR WIDGET DINÁMICAMENTE ============
+
+      function loadWidget(businessId) {
+        const widgetScript = document.createElement('script');
+        widgetScript.src = 'widget.js';
+        widgetScript.setAttribute('data-business-id', businessId);
+        document.body.appendChild(widgetScript);
+      }
+
+      // ============ INICIALIZAR ============
+
+      async function init() {
+        const identifier = await getBusinessId();
+
+        if (!identifier) {
+          // No hay negocio: mostrar estado vacío
+          document.querySelector('.business-site').style.display = 'none';
+          document.getElementById('demo-banner').style.display = 'none';
+          document.getElementById('no-business-state').style.display = 'block';
+          return;
+        }
+
+        const business = await loadBusiness(identifier);
+        if (!business) {
+          document.querySelector('.business-site').style.display = 'none';
+          document.getElementById('demo-banner').style.display = 'none';
+          document.getElementById('no-business-state').style.display = 'block';
+          return;
+        }
+
+        // Aplicar datos del negocio al sitio simulado
+        applyBusinessToUI(business);
+
+        // Cargar el widget real con el business_id
+        loadWidget(business.id);
+      }
+
+      init();
+    })();
+  </script>
+
 </body>
 </html>
