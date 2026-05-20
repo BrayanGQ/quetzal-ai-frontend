@@ -463,6 +463,383 @@ const ventas = {
     document.getElementById("consejos-card").style.display = "none";
   },
 
+  // -----------------------------
+  //   IA #4 — REPORTE MENSUAL PDF
+  // -----------------------------
+
+  isReporting: false,
+
+  async requestReporteMensual() {
+    if (this.isReporting) return;
+
+    if (this.sales.length < 5) {
+      admin._toast('⚠️ Necesitás al menos 5 ventas para generar un reporte útil', 'error');
+      return;
+    }
+
+    if (!window.jspdf) {
+      admin._toast('⚠️ Cargando librería PDF, intentá de nuevo en 2 segundos', 'error');
+      return;
+    }
+
+    this.isReporting = true;
+    const card = document.getElementById("reporte-card");
+    const content = document.getElementById("reporte-content");
+    card.style.display = "block";
+    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Generando reporte profesional del mes...</div>`;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    try {
+      const response = await admin.apiCall('/api/reporte-mensual', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+      const data = await response.json();
+      this.isReporting = false;
+
+      if (!data.success) throw new Error(data.error);
+
+      this._renderReportePreview(data.report);
+    } catch (error) {
+      this.isReporting = false;
+      console.error('[Reporte]', error);
+      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
+    }
+  },
+
+  _renderReportePreview(report) {
+    const content = document.getElementById("reporte-content");
+    if (!content || !report) return;
+
+    const k = report.kpis;
+    const products = report.topProducts.slice(0, 3).map(p =>
+      `<li><strong>${this._escape(p.name)}</strong> — ${p.units} unidades · Q ${p.revenue.toFixed(2)}</li>`
+    ).join('');
+
+    content.innerHTML = `
+      <div class="reporte-preview">
+        <div class="reporte-meta">
+          <div>
+            <strong>${this._escape(report.business.name)}</strong>
+            <div class="reporte-period">${this._escape(report.period.monthName)} ${report.period.year}</div>
+          </div>
+          <div class="reporte-stamp">Generado con IA</div>
+        </div>
+
+        <div class="reporte-kpis">
+          <div class="reporte-kpi">
+            <div class="reporte-kpi-label">Ingresos totales</div>
+            <div class="reporte-kpi-value">Q ${k.totalRevenue.toFixed(2)}</div>
+          </div>
+          <div class="reporte-kpi">
+            <div class="reporte-kpi-label">Transacciones</div>
+            <div class="reporte-kpi-value">${k.totalTransactions}</div>
+          </div>
+          <div class="reporte-kpi">
+            <div class="reporte-kpi-label">Ticket promedio</div>
+            <div class="reporte-kpi-value">Q ${k.avgTicket.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div class="reporte-section">
+          <h4>🛒 Productos más vendidos</h4>
+          <ul class="reporte-list">${products}</ul>
+        </div>
+
+        <div class="reporte-section">
+          <h4>🧠 Análisis profesional</h4>
+          <p class="reporte-text">${this._escape(report.analysis.hallazgos || '')}</p>
+        </div>
+
+        <div class="reporte-actions">
+          <button class="btn-primary btn-download-pdf" onclick="ventas._generatePDF()">
+            ⬇️ Descargar reporte completo en PDF
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Guardar para usar al descargar
+    this._currentReport = report;
+  },
+
+  async _generatePDF() {
+    const report = this._currentReport;
+    if (!report) {
+      admin._toast('⚠️ No hay reporte para descargar', 'error');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginX = 18;
+    const contentWidth = pageWidth - (marginX * 2);
+    let y = 20;
+
+    const COLOR_NAVY = [15, 30, 51];
+    const COLOR_PRIMARY = [20, 184, 166];
+    const COLOR_MUTED = [100, 116, 139];
+    const COLOR_GOLD = [180, 83, 9];
+
+    // ========== HEADER ==========
+    doc.setFillColor(...COLOR_NAVY);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text(report.business.name || 'Reporte mensual', marginX, 18);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    const periodLine = `Reporte de ${report.period.monthName} ${report.period.year}`;
+    doc.text(periodLine, marginX, 26);
+
+    doc.setFontSize(9);
+    doc.setTextColor(180, 200, 220);
+    doc.text('Generado con Quetzal AI', pageWidth - marginX, 18, { align: 'right' });
+    const dateStr = new Date(report.period.generatedAt).toLocaleDateString('es-GT', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+    doc.text(dateStr, pageWidth - marginX, 26, { align: 'right' });
+
+    y = 50;
+
+    // ========== RESUMEN EJECUTIVO ==========
+    doc.setTextColor(...COLOR_NAVY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('RESUMEN EJECUTIVO', marginX, y);
+    y += 2;
+    doc.setDrawColor(...COLOR_PRIMARY);
+    doc.setLineWidth(0.6);
+    doc.line(marginX, y, marginX + 50, y);
+    y += 10;
+
+    const k = report.kpis;
+    const kpiData = [
+      ['Ingresos totales:', `Q ${k.totalRevenue.toFixed(2)}`],
+      ['Total de transacciones:', `${k.totalTransactions}`],
+      ['Ticket promedio:', `Q ${k.avgTicket.toFixed(2)}`],
+      ['Día con mayor venta:', `${k.strongestDay} (Q ${k.strongestDayRevenue.toFixed(2)})`],
+      ['Hora pico:', k.peakHour]
+    ];
+
+    doc.setFontSize(11);
+    kpiData.forEach(([label, value]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLOR_MUTED);
+      doc.text(label, marginX, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.text(value, marginX + 70, y);
+      y += 7;
+    });
+
+    y += 6;
+
+    // ========== PRODUCTOS TOP ==========
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR_NAVY);
+    doc.text('PRODUCTOS MÁS VENDIDOS', marginX, y);
+    y += 2;
+    doc.line(marginX, y, marginX + 70, y);
+    y += 6;
+
+    // Tabla de productos
+    doc.autoTable({
+      startY: y,
+      head: [['#', 'Producto', 'Unidades', 'Ingresos']],
+      body: report.topProducts.slice(0, 5).map((p, i) => [
+        i + 1,
+        p.name,
+        p.units,
+        `Q ${p.revenue.toFixed(2)}`
+      ]),
+      theme: 'striped',
+      headStyles: {
+        fillColor: COLOR_PRIMARY,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10
+      },
+      bodyStyles: { fontSize: 10 },
+      margin: { left: marginX, right: marginX }
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // ========== VENTAS POR DÍA ==========
+    if (y > 220) { doc.addPage(); y = 20; }
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR_NAVY);
+    doc.text('VENTAS POR DÍA DE LA SEMANA', marginX, y);
+    y += 2;
+    doc.line(marginX, y, marginX + 80, y);
+    y += 6;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Día', 'Transacciones', 'Ingresos', 'Promedio']],
+      body: report.dayBreakdown.map(d => [
+        d.name,
+        d.count,
+        `Q ${d.revenue.toFixed(2)}`,
+        d.count > 0 ? `Q ${(d.revenue / d.count).toFixed(2)}` : '—'
+      ]),
+      theme: 'grid',
+      headStyles: {
+        fillColor: COLOR_NAVY,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10
+      },
+      bodyStyles: { fontSize: 10 },
+      margin: { left: marginX, right: marginX }
+    });
+    y = doc.lastAutoTable.finalY + 12;
+
+    // ========== ANÁLISIS DE LA IA ==========
+    if (y > 220) { doc.addPage(); y = 20; }
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR_NAVY);
+    doc.text('ANÁLISIS PROFESIONAL', marginX, y);
+    y += 2;
+    doc.line(marginX, y, marginX + 65, y);
+    y += 8;
+
+    // Hallazgos
+    if (report.analysis.hallazgos) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLOR_PRIMARY);
+      doc.text('Hallazgos del mes:', marginX, y);
+      y += 6;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.setFontSize(10);
+      const hallazgosLines = doc.splitTextToSize(report.analysis.hallazgos, contentWidth);
+      doc.text(hallazgosLines, marginX, y);
+      y += hallazgosLines.length * 5 + 8;
+    }
+
+    // Oportunidades
+    if (report.analysis.oportunidades && report.analysis.oportunidades.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20; }
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLOR_GOLD);
+      doc.text('Oportunidades identificadas:', marginX, y);
+      y += 7;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.setFontSize(10);
+      report.analysis.oportunidades.forEach((op, i) => {
+        const text = `${i + 1}.  ${op}`;
+        const lines = doc.splitTextToSize(text, contentWidth - 4);
+        if (y + (lines.length * 5) > 270) { doc.addPage(); y = 20; }
+        doc.text(lines, marginX, y);
+        y += lines.length * 5 + 3;
+      });
+      y += 5;
+    }
+
+    // Recomendaciones
+    if (report.analysis.recomendaciones && report.analysis.recomendaciones.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20; }
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.text('RECOMENDACIONES PARA EL PRÓXIMO MES', marginX, y);
+      y += 2;
+      doc.line(marginX, y, marginX + 95, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.setFontSize(10);
+      report.analysis.recomendaciones.forEach((rec, i) => {
+        const text = `${i + 1}.  ${rec}`;
+        const lines = doc.splitTextToSize(text, contentWidth - 4);
+        if (y + (lines.length * 5) > 270) { doc.addPage(); y = 20; }
+        doc.text(lines, marginX, y);
+        y += lines.length * 5 + 4;
+      });
+      y += 5;
+    }
+
+    // Proyección
+    if (report.analysis.proyeccion) {
+      if (y > 230) { doc.addPage(); y = 20; }
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLOR_NAVY);
+      doc.text('PROYECCIÓN', marginX, y);
+      y += 2;
+      doc.line(marginX, y, marginX + 30, y);
+      y += 8;
+
+      // Recuadro
+      const projLines = doc.splitTextToSize(report.analysis.proyeccion, contentWidth - 10);
+      const boxHeight = projLines.length * 5 + 10;
+
+      doc.setFillColor(245, 250, 252);
+      doc.setDrawColor(...COLOR_PRIMARY);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(marginX, y, contentWidth, boxHeight, 2, 2, 'FD');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLOR_NAVY);
+      doc.text(projLines, marginX + 5, y + 7);
+      y += boxHeight + 8;
+    }
+
+    // ========== FOOTER ==========
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+
+      // Línea
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.line(marginX, 280, pageWidth - marginX, 280);
+
+      // Texto
+      doc.setFontSize(8);
+      doc.setTextColor(...COLOR_MUTED);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Generado por Quetzal AI · Asistente Inteligente para PYMES', marginX, 285);
+      doc.text(`Página ${i} de ${pageCount}`, pageWidth - marginX, 285, { align: 'right' });
+    }
+
+    // ========== GUARDAR ==========
+    const safeName = (report.business.name || 'reporte')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-');
+    const filename = `reporte-${safeName}-${report.period.monthName.toLowerCase()}-${report.period.year}.pdf`;
+
+    doc.save(filename);
+    admin._toast('✅ Reporte descargado correctamente');
+  },
+
+  closeReporte() {
+    document.getElementById("reporte-card").style.display = "none";
+    this._currentReport = null;
+  },
+
 
   // -----------------------------
   //   UTILIDADES

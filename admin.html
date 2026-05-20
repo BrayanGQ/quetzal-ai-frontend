@@ -132,19 +132,26 @@
       <div class="kpi-grid" id="kpi-grid"></div>
 
       <!-- BOTONES IA AVANZADA -->
-      <div class="ai-actions-row">
+      <div class="ai-actions-row ai-actions-row-3">
         <button class="btn-ai-action" onclick="ventas.requestPrediction()">
           <span class="ai-icon">🔮</span>
           <div>
-            <strong>Predecir próximos 7 días</strong>
-            <small>Llama 3.3 proyecta tus ventas</small>
+            <strong>Predecir 7 días</strong>
+            <small>Proyección de ventas</small>
           </div>
         </button>
         <button class="btn-ai-action" onclick="ventas.requestConsejos()">
           <span class="ai-icon">💼</span>
           <div>
             <strong>Consejos para mi negocio</strong>
-            <small>Plan de acción personalizado</small>
+            <small>Plan de acción IA</small>
+          </div>
+        </button>
+        <button class="btn-ai-action btn-ai-action-special" onclick="ventas.requestReporteMensual()">
+          <span class="ai-icon">📄</span>
+          <div>
+            <strong>Reporte mensual PDF</strong>
+            <small>Informe completo del mes</small>
           </div>
         </button>
       </div>
@@ -161,6 +168,18 @@
         <div id="prediction-content"></div>
       </div>
 
+      <!-- CONTENEDOR DE REPORTE MENSUAL -->
+      <div id="reporte-card" class="prediction-card" style="display:none;">
+        <div class="prediction-header">
+          <div class="card-title">
+            <span class="ai-badge">IA</span>
+            📄 Reporte mensual generado
+          </div>
+          <button class="btn-close-card" onclick="ventas.closeReporte()" title="Cerrar">×</button>
+        </div>
+        <div id="reporte-content"></div>
+      </div>
+      
       <!-- CONTENEDOR DE CONSEJOS -->
       <div id="consejos-card" class="consejos-card" style="display:none;">
         <div class="prediction-header">
@@ -528,6 +547,8 @@
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/ventas.js"></script>
 </body>
