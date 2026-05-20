@@ -208,12 +208,21 @@ const admin = {
         localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.BUSINESS_CACHE, JSON.stringify(cfg));
         this._updateWidgetSection(cfg);
       } else {
-        this.loadDefaultConfig();
+        // Usuario nuevo: NO cargar el ejemplo, dejar todo vacío
+        this._clearConfigFields();
         this._updateWidgetSection(null);
       }
     } catch (error) {
       console.error('[Load config]', error);
     }
+  },
+
+  _clearConfigFields() {
+    ['biz-name', 'biz-type', 'biz-location', 'biz-hours', 'biz-delivery', 'biz-payment', 'biz-products']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
   },
 
 

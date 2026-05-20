@@ -59,6 +59,24 @@
         <div class="nav-info-value" id="user-email">cargando...</div>
       </div>
 
+      <a class="nav-item" onclick="onboarding.reset()" style="cursor:pointer;">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        🎓 Ver tour
+      </a>
+
+      <button class="theme-toggle-btn" data-theme-toggle onclick="theme.toggle()">
+        <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M14 9.5a6 6 0 0 1-7.5-7.5 6 6 0 1 0 7.5 7.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:none;">
+          <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.5 1.5M11 11l1.5 1.5M3.5 12.5L5 11M11 5l1.5-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="theme-label">Modo oscuro</span>
+      </button>
+
       <a class="nav-item logout-btn" onclick="auth.logout()" style="margin-top:8px;cursor:pointer;">
         <span class="nav-icon">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h3M11 11l3-3-3-3M14 8H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -179,7 +197,7 @@
         </div>
         <div id="reporte-content"></div>
       </div>
-      
+
       <!-- CONTENEDOR DE CONSEJOS -->
       <div id="consejos-card" class="consejos-card" style="display:none;">
         <div class="prediction-header">
@@ -312,14 +330,24 @@
         <p>Esta es la información que la IA usará para responder a tus clientes. Configúrala una vez y el chatbot la usará en cada conversación.</p>
       </div>
 
+      <!-- Banner de ayuda para usuarios nuevos -->
+      <div class="config-help-banner" id="config-help-banner">
+        <div class="help-banner-icon">💡</div>
+        <div class="help-banner-content">
+          <strong>¿Es tu primera vez? Te ayudamos.</strong>
+          <p>Si no estás seguro qué poner, podés cargar un ejemplo de "Tienda Don José" para ver cómo se rellena cada campo. Después solo lo cambiás por los datos de tu negocio.</p>
+        </div>
+        <button class="btn-secondary" onclick="admin.loadDefaultConfig()">📋 Ver ejemplo</button>
+      </div>
+
       <div class="config-grid">
         <div class="form-group form-group-wide">
-          <label>Nombre del negocio</label>
-          <input type="text" id="biz-name" placeholder="Ej: Tienda Don José" />
+          <label>Nombre del negocio <span class="required">*</span></label>
+          <input type="text" id="biz-name" placeholder="Ej: Panadería La Esperanza, Comedor Doña Carmen, Veterinaria San Francisco..." />
         </div>
         <div class="form-group">
           <label>Tipo de negocio</label>
-          <input type="text" id="biz-type" placeholder="Ej: tienda de abarrotes" />
+          <input type="text" id="biz-type" placeholder="Ej: panadería, comedor, farmacia..." />
         </div>
         <div class="form-group">
           <label>Ubicación</label>
@@ -327,19 +355,19 @@
         </div>
         <div class="form-group form-group-wide">
           <label>Horarios de atención</label>
-          <input type="text" id="biz-hours" placeholder="Ej: Lunes a sábado 7 AM - 8 PM, domingo 8 AM - 2 PM" />
+          <input type="text" id="biz-hours" placeholder="Ej: Lunes a sábado de 7 AM a 8 PM, domingo de 8 AM a 2 PM" />
         </div>
         <div class="form-group form-group-wide">
           <label>Información de entregas</label>
-          <textarea id="biz-delivery" rows="3" placeholder="Ej: Entregas en zonas 11, 12 y 13. Envío gratis en pedidos mayores a Q 100..."></textarea>
+          <textarea id="biz-delivery" rows="3" placeholder="Ej: Hacemos entregas en zonas cercanas. Envío gratis en pedidos mayores a Q 100. Pedidos por WhatsApp."></textarea>
         </div>
         <div class="form-group form-group-wide">
           <label>Formas de pago aceptadas</label>
-          <textarea id="biz-payment" rows="2" placeholder="Ej: Efectivo, tarjeta de débito y crédito, Tigo Money..."></textarea>
+          <textarea id="biz-payment" rows="2" placeholder="Ej: Efectivo, tarjeta de débito y crédito, transferencia bancaria, Tigo Money."></textarea>
         </div>
         <div class="form-group form-group-wide">
-          <label>Productos y precios <span class="hint">(uno por línea)</span></label>
-          <textarea id="biz-products" rows="6" placeholder="Azúcar blanca: libra Q 8, arroba Q 180&#10;Tortillas hechas a mano: docena Q 15&#10;Pan francés: unidad Q 5, docena Q 50"></textarea>
+          <label>Productos y precios <span class="hint">(uno por línea, con su precio)</span></label>
+          <textarea id="biz-products" rows="6" placeholder="Pan dulce: unidad Q 4&#10;Pan francés: unidad Q 5, docena Q 50&#10;Pastel de chocolate: porción Q 25&#10;Galletas surtidas: libra Q 30"></textarea>
         </div>
       </div>
 
@@ -544,6 +572,7 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -551,5 +580,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/ventas.js"></script>
+  <script src="js/onboarding.js"></script>
 </body>
 </html>
