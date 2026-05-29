@@ -50,7 +50,7 @@
         <span class="nav-icon">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4h8v8H4z M2 2v2 M14 2v2 M2 12v2 M14 12v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </span>
-        Mi Widget
+        Compartí tu chatbot
       </a>
 
       <div class="nav-section-label" style="margin-top: 28px;">Mi Cuenta</div>
@@ -77,7 +77,7 @@
         <span class="theme-label">Modo oscuro</span>
       </button>
 
-      <a class="nav-item logout-btn" onclick="auth.logout()" style="margin-top:8px;cursor:pointer;">
+      <a class="nav-item logout-btn" onclick="admin.confirmLogout()" style="margin-top:8px;cursor:pointer;">
         <span class="nav-icon">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h3M11 11l3-3-3-3M14 8H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
@@ -115,6 +115,14 @@
         <p>Registra cada venta de tu negocio y la IA analizará automáticamente los patrones, productos estrella y horas pico.</p>
       </div>
 
+      <!-- Estado vacío motivador (solo si no hay ventas) -->
+      <div id="ventas-empty-hero" class="empty-hero" style="display:none;">
+        <div class="empty-hero-emoji">📊</div>
+        <h3>Aún no hay ventas registradas</h3>
+        <p>Empezá registrando tu primera venta abajo. Cuando tengas 3 o más, la IA te dará análisis automáticos.</p>
+        <div class="empty-hero-arrow">↓</div>
+      </div>
+
       <!-- Quick add form -->
       <div class="add-sale-card">
         <div class="add-sale-header">
@@ -123,26 +131,27 @@
         </div>
         <div class="add-sale-grid">
           <div class="form-group">
-            <label>Producto</label>
+            <label>Producto <span class="tooltip" data-tooltip="Escribí el nombre exacto del producto. Usá siempre el mismo nombre para identificar mejor tus productos top.">ⓘ</span></label>
             <input type="text" id="sale-product" placeholder="Ej: Pan dulce" />
           </div>
           <div class="form-group">
-            <label>Cantidad</label>
+            <label>Cantidad <span class="tooltip" data-tooltip="¿Cuántas unidades vendiste de este producto?">ⓘ</span></label>
             <input type="number" id="sale-qty" placeholder="1" min="1" value="1" />
           </div>
           <div class="form-group">
-            <label>Precio unitario (Q)</label>
+            <label>Precio unitario (Q) <span class="tooltip" data-tooltip="Precio de UNA unidad. La aplicación multiplica automáticamente por la cantidad.">ⓘ</span></label>
             <input type="number" id="sale-price" placeholder="0.00" step="0.01" min="0" />
           </div>
           <div class="form-group">
-            <label>Fecha y hora</label>
+            <label>Fecha y hora <span class="tooltip" data-tooltip="Cuándo se hizo la venta. Por defecto usa la hora actual.">ⓘ</span></label>
             <input type="datetime-local" id="sale-date" />
           </div>
         </div>
         <div class="action-row">
           <button class="btn-primary" onclick="ventas.addSale()">+ Registrar venta</button>
-          <button class="btn-secondary" onclick="ventas.loadSampleData()">Cargar datos de ejemplo</button>
-          <button class="btn-secondary btn-danger-text" onclick="ventas.clearAll()">Borrar todo</button>
+          <button class="btn-secondary" onclick="ventas.loadSampleData()">📋 Cargar datos de ejemplo</button>
+          <button class="btn-secondary" onclick="ventas.exportExcel()">📊 Exportar a Excel</button>
+          <button class="btn-secondary btn-danger-text" onclick="ventas.clearAll()">🗑️ Borrar todo</button>
         </div>
       </div>
 
@@ -269,7 +278,7 @@
 
       <div class="form-grid">
         <div class="form-group">
-          <label>Tipo de contenido</label>
+          <label>Tipo de contenido <span class="tooltip" data-tooltip="Elegí el tipo según dónde lo vas a publicar.">ⓘ</span></label>
           <select id="content-type">
             <option value="post">Publicación para Facebook / Instagram</option>
             <option value="promo">Mensaje de promoción</option>
@@ -278,7 +287,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Tono</label>
+          <label>Tono <span class="tooltip" data-tooltip="El tono define cómo suena el mensaje. Amigable es lo más usado para PYMES.">ⓘ</span></label>
           <select id="content-tone">
             <option value="amigable">Amigable y cercano</option>
             <option value="profesional">Profesional</option>
@@ -287,7 +296,7 @@
           </select>
         </div>
         <div class="form-group form-group-wide">
-          <label>Describe lo que quieres comunicar</label>
+          <label>Describe lo que quieres comunicar <span class="tooltip" data-tooltip="Escribí en español natural. Ejemplo: 'Anunciar 2x1 en pan dulce los viernes de este mes'. La IA se encarga del resto.">ⓘ</span></label>
           <textarea id="content-prompt" placeholder="Ej: Anunciar que tenemos 2x1 en pizza familiar todos los viernes de este mes..."></textarea>
         </div>
         <div class="form-group form-group-wide">
@@ -330,57 +339,56 @@
         <p>Esta es la información que la IA usará para responder a tus clientes. Configúrala una vez y el chatbot la usará en cada conversación.</p>
       </div>
 
-      <!-- Banner de ayuda para usuarios nuevos -->
       <div class="config-help-banner" id="config-help-banner">
         <div class="help-banner-icon">💡</div>
         <div class="help-banner-content">
           <strong>¿Es tu primera vez? Te ayudamos.</strong>
-          <p>Si no estás seguro qué poner, podés cargar un ejemplo de "Tienda Don José" para ver cómo se rellena cada campo. Después solo lo cambiás por los datos de tu negocio.</p>
+          <p>Si no estás seguro qué poner, podés cargar un ejemplo para ver cómo se rellena cada campo. Después solo lo cambiás por los datos de tu negocio.</p>
         </div>
         <button class="btn-secondary" onclick="admin.loadDefaultConfig()">📋 Ver ejemplo</button>
       </div>
 
       <div class="config-grid">
         <div class="form-group form-group-wide">
-          <label>Nombre del negocio <span class="required">*</span></label>
+          <label>🏪 Nombre del negocio <span class="required">*</span> <span class="tooltip" data-tooltip="El nombre con el que tus clientes te conocen. Ejemplo: 'Panadería La Esperanza', 'Comedor Doña Carmen'.">ⓘ</span></label>
           <input type="text" id="biz-name" placeholder="Ej: Panadería La Esperanza, Comedor Doña Carmen, Veterinaria San Francisco..." />
         </div>
         <div class="form-group">
-          <label>Tipo de negocio</label>
+          <label>🏷️ Tipo de negocio <span class="tooltip" data-tooltip="A qué se dedica tu negocio en una palabra. Esto ayuda a la IA a adaptar el tono.">ⓘ</span></label>
           <input type="text" id="biz-type" placeholder="Ej: panadería, comedor, farmacia..." />
         </div>
         <div class="form-group">
-          <label>Ubicación</label>
+          <label>📍 Ubicación <span class="tooltip" data-tooltip="Dónde está ubicado tu negocio. Ayuda a que los clientes sepan si les queda cerca.">ⓘ</span></label>
           <input type="text" id="biz-location" placeholder="Ej: Zona 11, Ciudad de Guatemala" />
         </div>
         <div class="form-group form-group-wide">
-          <label>Horarios de atención</label>
+          <label>⏰ Horarios de atención <span class="tooltip" data-tooltip="Cuándo está abierto tu negocio. Escribilo natural como se lo dirías a un cliente.">ⓘ</span></label>
           <input type="text" id="biz-hours" placeholder="Ej: Lunes a sábado de 7 AM a 8 PM, domingo de 8 AM a 2 PM" />
         </div>
         <div class="form-group form-group-wide">
-          <label>Información de entregas</label>
+          <label>🛵 Información de entregas <span class="tooltip" data-tooltip="Si hacés entregas: zonas, costos, condiciones. Si no, podés escribir 'No hacemos entregas'.">ⓘ</span></label>
           <textarea id="biz-delivery" rows="3" placeholder="Ej: Hacemos entregas en zonas cercanas. Envío gratis en pedidos mayores a Q 100. Pedidos por WhatsApp."></textarea>
         </div>
         <div class="form-group form-group-wide">
-          <label>Formas de pago aceptadas</label>
+          <label>💳 Formas de pago aceptadas <span class="tooltip" data-tooltip="Qué métodos de pago aceptás. Sé claro para que el cliente no tenga que preguntar.">ⓘ</span></label>
           <textarea id="biz-payment" rows="2" placeholder="Ej: Efectivo, tarjeta de débito y crédito, transferencia bancaria, Tigo Money."></textarea>
         </div>
         <div class="form-group form-group-wide">
-          <label>Productos y precios <span class="hint">(uno por línea, con su precio)</span></label>
+          <label>🛒 Productos y precios <span class="hint">(uno por línea, con su precio)</span> <span class="tooltip" data-tooltip="Listá tus productos con precios. Un producto por línea. La IA usará esto para responder a los clientes sobre disponibilidad y costos.">ⓘ</span></label>
           <textarea id="biz-products" rows="6" placeholder="Pan dulce: unidad Q 4&#10;Pan francés: unidad Q 5, docena Q 50&#10;Pastel de chocolate: porción Q 25&#10;Galletas surtidas: libra Q 30"></textarea>
         </div>
       </div>
 
       <div class="action-row">
-        <button class="btn-primary" onclick="admin.saveChatbotConfig()">Guardar configuración</button>
-        <button class="btn-secondary" onclick="admin.loadDefaultConfig()">Cargar ejemplo (Tienda Don José)</button>
-        <a href="chat-publico.html" target="_blank" class="btn-secondary">Probar chatbot →</a>
+        <button class="btn-primary" onclick="admin.saveChatbotConfig()">💾 Guardar configuración</button>
+        <a href="chat-publico.html" target="_blank" class="btn-secondary">👁️ Probar chatbot →</a>
       </div>
 
       <div class="config-note">
         <strong>¿Cómo funciona?</strong> Toda esta información se convierte automáticamente en un <em>system prompt</em> que se envía a Llama 3.3 (a través de Groq) cada vez que un cliente hace una pregunta. La IA responde como si hubiera sido entrenada específicamente para tu negocio.
       </div>
     </section>
+
 
     <!-- =================== TAB: MI WIDGET =================== -->
     <section class="tab-panel" id="tab-widget">
@@ -389,7 +397,6 @@
         <p>Tu chatbot ya está activo. Compartilo con tus clientes a través de un link, código QR o redes sociales — todo sin saber programación.</p>
       </div>
 
-      <!-- Estado: sin configuración -->
       <div id="widget-no-config" class="config-note" style="display:none;">
         <strong>⚠️ Configurá tu negocio primero</strong><br>
         Andá al tab <em>"Configurar Chatbot"</em>, llená la información de tu negocio y guardá. Después volvé acá.
@@ -397,7 +404,6 @@
 
       <div id="widget-content">
 
-        <!-- ============ SECCIÓN 1: TU LINK ============ -->
         <div class="share-section">
           <div class="share-section-header">
             <div class="share-icon-circle share-icon-link">🔗</div>
@@ -414,7 +420,6 @@
             </button>
           </div>
 
-          <!-- Editar slug -->
           <div class="slug-editor">
             <div class="slug-editor-header" onclick="admin.toggleSlugEditor()">
               <span>✏️ Personalizar mi link</span>
@@ -442,7 +447,6 @@
         </div>
 
 
-        <!-- ============ SECCIÓN 2: COMPARTIR EN REDES ============ -->
         <div class="share-section">
           <div class="share-section-header">
             <div class="share-icon-circle share-icon-share">📲</div>
@@ -496,7 +500,6 @@
         </div>
 
 
-        <!-- ============ SECCIÓN 3: CÓDIGO QR ============ -->
         <div class="share-section">
           <div class="share-section-header">
             <div class="share-icon-circle share-icon-qr">📷</div>
@@ -530,19 +533,18 @@
         </div>
 
 
-        <!-- ============ SECCIÓN 4 (AVANZADA): WIDGET EMBEBIBLE ============ -->
         <div class="advanced-section">
           <div class="advanced-header" onclick="admin.toggleAdvanced()">
             <div>
               <h3>💻 ¿Tenés tu propio sitio web?</h3>
-              <p>Opcional · Solo para dueños con sitio web propio (WordPress, Wix, sitio a mano)</p>
+              <p>Opcional · Solo para dueños con sitio web propio</p>
             </div>
             <span class="advanced-toggle-arrow" id="advanced-arrow">▼</span>
           </div>
 
           <div class="advanced-body" id="advanced-body" style="display:none;">
             <p class="advanced-intro">
-              Si ya tenés tu sitio web (ejemplo: <code>mipanaderia.com</code>), podés pegar este código y el chatbot aparecerá automáticamente en tu sitio.
+              Si ya tenés tu sitio web (ejemplo: <code>mipanaderia.com</code>), podés pegar este código y el chatbot aparecerá automáticamente.
             </p>
 
             <div class="widget-code-block">
@@ -559,13 +561,24 @@
                 <li><strong>Guardá y publicá</strong> tu sitio.</li>
                 <li><strong>¡Listo!</strong> El chatbot aparecerá flotando abajo a la derecha.</li>
               </ol>
-              <p class="advanced-note">¿No tenés sitio web? <strong>No te preocupes</strong> — con tu link y el QR ya tenés todo lo que necesitás.</p>
+              <p class="advanced-note">¿No tenés sitio web? <strong>No te preocupes</strong> — con tu link y el QR ya tenés todo.</p>
             </details>
           </div>
         </div>
 
       </div>
     </section>
+
+
+    <!-- Footer global -->
+    <footer class="app-footer">
+      <div>
+        <strong>Quetzal AI</strong> · Asistente Inteligente para PYMES de Guatemala
+      </div>
+      <div class="app-footer-meta">
+        Proyecto de Inteligencia Artificial Aplicada · UMG 2026 · Brayan Alexander Gómez Quex
+      </div>
+    </footer>
 
   </main>
 
@@ -576,6 +589,7 @@
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="js/admin.js"></script>

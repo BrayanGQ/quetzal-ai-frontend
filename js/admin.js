@@ -1,13 +1,13 @@
 /**
  * Quetzal AI — Lógica del Panel Administrativo
- * Con soporte de slug + QR + compartir en redes
+ * Con tooltips, mejores mensajes, exportar CSV, confirmaciones
  */
 
 const admin = {
 
   user: null,
   accessToken: null,
-  business: null,    // info del negocio del usuario
+  business: null,
   isAdvancedOpen: false,
 
 
@@ -18,8 +18,22 @@ const admin = {
   switchTab(tab, el) {
     document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
     if (el) el.classList.add("active");
-    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-    document.getElementById(`tab-${tab}`).classList.add("active");
+
+    // Animación suave entre tabs
+    const currentActive = document.querySelector(".tab-panel.active");
+    if (currentActive) {
+      currentActive.style.opacity = '0';
+      setTimeout(() => {
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        const newTab = document.getElementById(`tab-${tab}`);
+        newTab.classList.add("active");
+        newTab.style.opacity = '0';
+        setTimeout(() => { newTab.style.opacity = '1'; }, 30);
+      }, 150);
+    } else {
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      document.getElementById(`tab-${tab}`).classList.add("active");
+    }
 
     const titles = {
       ventas: "Panel de Ventas",
@@ -69,7 +83,7 @@ const admin = {
     const imgWrap = document.getElementById("output-image-wrap");
 
     if (!prompt) {
-      output.innerHTML = '<span style="color:#EF4444;">⚠️ Por favor, escribí lo que querés comunicar.</span>';
+      output.innerHTML = '<span style="color:var(--danger);">⚠️ Escribí primero lo que querés comunicar antes de generar el contenido.</span>';
       imgWrap.style.display = "none";
       return;
     }
@@ -87,7 +101,7 @@ const admin = {
       if (!data.success) throw new Error(data.error);
       output.textContent = data.content;
     } catch (error) {
-      output.innerHTML = `<span style="color:#EF4444;">⚠️ ${error.message}</span>`;
+      output.innerHTML = `<span style="color:var(--danger);">⚠️ No pudimos generar el contenido. Probá de nuevo en un momento.</span>`;
       return;
     }
 
@@ -108,7 +122,7 @@ const admin = {
       loading.className = "loading-img";
       imgWrap.appendChild(loading);
     }
-    loading.textContent = "Generando imagen con Flux... ~5 segundos";
+    loading.textContent = "Generando imagen con IA... ~5 segundos";
     loading.style.display = "flex";
 
     try {
@@ -126,7 +140,7 @@ const admin = {
         imgEl.style.display = "block";
       };
     } catch (error) {
-      loading.textContent = `⚠️ ${error.message}`;
+      loading.textContent = `⚠️ No pudimos generar la imagen. Probá de nuevo.`;
     }
   },
 
@@ -138,7 +152,7 @@ const admin = {
 
   copyOutput(id) {
     const text = document.getElementById(id).textContent;
-    navigator.clipboard.writeText(text).then(() => this._toast('✅ Contenido copiado'));
+    navigator.clipboard.writeText(text).then(() => this._toast('✅ Contenido copiado al portapapeles'));
   },
 
 
@@ -158,8 +172,17 @@ const admin = {
     };
 
     if (!config.name) {
-      this._toast('⚠️ El nombre es obligatorio', 'error');
+      this._toast('⚠️ Falta el nombre de tu negocio. Es lo único obligatorio.', 'error');
+      document.getElementById("biz-name").focus();
       return;
+    }
+
+    // Indicador de "guardando"
+    const saveBtn = document.querySelector('#tab-chatbot-config .btn-primary');
+    const originalText = saveBtn ? saveBtn.textContent : '';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span> Guardando...';
     }
 
     try {
@@ -173,9 +196,14 @@ const admin = {
       this.business = data.business;
       localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.BUSINESS_CACHE, JSON.stringify(config));
       this._updateWidgetSection(data.business);
-      this._toast('✅ Configuración guardada');
+      this._toast('✅ Configuración guardada — tu chatbot ya está listo');
     } catch (error) {
-      this._toast(`⚠️ ${error.message}`, 'error');
+      this._toast(`⚠️ No pudimos guardar la configuración. Probá de nuevo.`, 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+      }
     }
   },
 
@@ -187,7 +215,7 @@ const admin = {
     document.getElementById("biz-delivery").value = DEMO_BUSINESS_CONFIG.delivery;
     document.getElementById("biz-payment").value = DEMO_BUSINESS_CONFIG.payment;
     document.getElementById("biz-products").value = DEMO_BUSINESS_CONFIG.products;
-    this._toast('📋 Datos de ejemplo cargados — guardá para aplicarlos');
+    this._toast('📋 Ejemplo cargado — modificá los datos por los de tu negocio y guardá');
   },
 
   async _loadSavedConfig() {
@@ -208,7 +236,6 @@ const admin = {
         localStorage.setItem(QUETZAL_CONFIG.STORAGE_KEYS.BUSINESS_CACHE, JSON.stringify(cfg));
         this._updateWidgetSection(cfg);
       } else {
-        // Usuario nuevo: NO cargar el ejemplo, dejar todo vacío
         this._clearConfigFields();
         this._updateWidgetSection(null);
       }
@@ -231,8 +258,6 @@ const admin = {
   // -----------------------------
 
   _getFrontendBase() {
-    // Detecta automáticamente el dominio actual del frontend
-    // (funciona tanto en localhost como en producción sin importar el dominio)
     return `${window.location.protocol}//${window.location.host}`;
   },
 
@@ -255,27 +280,22 @@ const admin = {
     if (noConfig) noConfig.style.display = 'none';
     if (widgetContent) widgetContent.style.display = 'block';
 
-    // Link display
     const url = this._getShareUrl(business);
     const display = document.getElementById("share-link-display");
     if (display) display.textContent = url;
 
-    // Botón preview
     const previewBtn = document.getElementById("btn-preview-link");
     if (previewBtn) previewBtn.href = `chat.html?biz=${business.slug || business.id}`;
 
-    // Prefix del editor de slug
     const slugPrefix = document.getElementById("slug-prefix");
     if (slugPrefix) {
       const base = this._getFrontendBase().replace(/https?:\/\//, '');
       slugPrefix.textContent = `${base}/chat.html?biz=`;
     }
 
-    // Slug input
     const slugInput = document.getElementById("slug-input");
     if (slugInput) slugInput.value = business.slug || '';
 
-    // Código embebible
     const codeEl = document.getElementById("widget-code-text");
     if (codeEl) {
       const widgetUrl = `${this._getFrontendBase()}/widget.js`;
@@ -284,7 +304,6 @@ const admin = {
         data-business-id="${business.id}"><\/script>`;
     }
 
-    // Generar QR
     this._renderQR(url);
   },
 
@@ -292,13 +311,11 @@ const admin = {
     const container = document.getElementById("qr-container");
     if (!container) return;
 
-    // Esperar hasta que la librería QRCode esté disponible (máx 3 segundos)
     let attempts = 0;
-    const maxAttempts = 30;  // 30 * 100ms = 3 segundos
+    const maxAttempts = 30;
 
     const tryRender = () => {
       if (window.QRCode) {
-        // Limpiar y crear canvas
         container.innerHTML = '<canvas id="qr-canvas"></canvas>';
         const canvas = document.getElementById("qr-canvas");
 
@@ -309,12 +326,8 @@ const admin = {
           errorCorrectionLevel: 'M'
         }, function(error) {
           if (error) {
-            console.error('[QR] Error al generar:', error);
-            container.innerHTML = `
-              <p style="color:#EF4444;font-size:13px;text-align:center;padding:20px;">
-                ⚠️ No se pudo generar el QR<br>
-                <a href="${url}" target="_blank" style="font-size:11px;color:#14B8A6;word-break:break-all;">Abrir link directo</a>
-              </p>`;
+            console.error('[QR]', error);
+            container.innerHTML = `<p style="color:var(--danger);font-size:13px;">⚠️ No se pudo generar el QR</p>`;
           }
         });
         return;
@@ -324,10 +337,8 @@ const admin = {
       if (attempts < maxAttempts) {
         setTimeout(tryRender, 100);
       } else {
-        // Librería no cargó — fallback con servicio externo (gratis)
-        console.warn('[QR] Librería local no disponible, usando fallback');
         const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}&bgcolor=FFFFFF&color=0F1E33&margin=10`;
-        container.innerHTML = `<img id="qr-canvas" src="${fallbackUrl}" alt="QR del negocio" style="display:block;width:220px;height:220px;border-radius:8px;" />`;
+        container.innerHTML = `<img id="qr-canvas" src="${fallbackUrl}" alt="QR" style="display:block;width:220px;height:220px;border-radius:8px;" />`;
       }
     };
 
@@ -336,7 +347,7 @@ const admin = {
 
 
   // -----------------------------
-  //   COPIAR LINK
+  //   COMPARTIR LINK
   // -----------------------------
 
   copyShareLink() {
@@ -349,7 +360,7 @@ const admin = {
         btn.innerHTML = '<span>✓</span> ¡Copiado!';
         setTimeout(() => { btn.innerHTML = original; }, 1800);
       }
-    }).catch(() => this._toast('⚠️ No se pudo copiar', 'error'));
+    }).catch(() => this._toast('⚠️ No se pudo copiar el link', 'error'));
   },
 
   copyWidgetCode() {
@@ -366,31 +377,28 @@ const admin = {
 
   _getShareMessage() {
     const name = this.business?.name || 'mi negocio';
-    return `¡Conocé el nuevo asistente virtual de ${name}! 🦜 Hablanos 24/7 y te ayudamos con tus consultas.`;
+    const type = this.business?.type ? ` (${this.business.type})` : '';
+    return `🦜 ¡Hola! Conocé el asistente virtual de *${name}*${type}.\n\n✅ Disponible 24/7\n✅ Te respondemos al instante\n✅ Consultá horarios, productos, entregas y más\n\nProbalo gratis 👇`;
   },
 
   shareWhatsApp() {
     const url = this._getShareUrl(this.business);
     const message = `${this._getShareMessage()}\n\n👉 ${url}`;
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   },
 
   shareFacebook() {
     const url = this._getShareUrl(this.business);
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-    window.open(fbUrl, '_blank', 'width=600,height=500');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=600,height=500');
   },
 
   shareTwitter() {
     const url = this._getShareUrl(this.business);
     const message = this._getShareMessage();
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(url)}`;
-    window.open(twitterUrl, '_blank', 'width=600,height=500');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(url)}`, '_blank', 'width=600,height=500');
   },
 
   shareInstagram() {
-    // Instagram no permite compartir vía URL directo, copiamos el mensaje
     const url = this._getShareUrl(this.business);
     const message = `${this._getShareMessage()}\n\n👉 ${url}`;
     navigator.clipboard.writeText(message).then(() => {
@@ -414,9 +422,8 @@ const admin = {
       .replace(/[^a-z0-9]+/g, '-');
 
     link.download = `qr-${name}-quetzal-ai.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = canvas.toDataURL ? canvas.toDataURL('image/png') : canvas.src;
     link.click();
-
     this._toast('✅ QR descargado — imprimilo y pegalo en tu negocio');
   },
 
@@ -429,7 +436,6 @@ const admin = {
     const body = document.getElementById("slug-editor-body");
     const arrow = document.getElementById("slug-arrow");
     const isOpen = body.style.display !== 'none';
-
     body.style.display = isOpen ? 'none' : 'block';
     if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   },
@@ -440,13 +446,13 @@ const admin = {
     const btn = document.getElementById("btn-save-slug");
 
     if (!rawSlug || rawSlug.length < 3) {
-      statusEl.innerHTML = '<span style="color:#EF4444;">⚠️ El link debe tener al menos 3 caracteres</span>';
+      statusEl.innerHTML = '<span style="color:var(--danger);">⚠️ El link debe tener al menos 3 caracteres</span>';
       return;
     }
 
     btn.disabled = true;
     btn.textContent = 'Guardando...';
-    statusEl.innerHTML = '<span style="color:#64748B;">⌛ Verificando disponibilidad...</span>';
+    statusEl.innerHTML = '<span style="color:var(--text-muted);">⌛ Verificando disponibilidad...</span>';
 
     try {
       const response = await this.apiCall('/api/business/slug', {
@@ -456,7 +462,7 @@ const admin = {
       const data = await response.json();
 
       if (!data.success) {
-        statusEl.innerHTML = `<span style="color:#EF4444;">⚠️ ${data.error}</span>`;
+        statusEl.innerHTML = `<span style="color:var(--danger);">⚠️ ${data.error}</span>`;
         btn.disabled = false;
         btn.textContent = 'Guardar nuevo link';
         return;
@@ -464,7 +470,7 @@ const admin = {
 
       this.business = data.business;
       this._updateWidgetSection(data.business);
-      statusEl.innerHTML = '<span style="color:#10B981;">✅ Link actualizado correctamente</span>';
+      statusEl.innerHTML = '<span style="color:var(--success);">✅ Link actualizado correctamente</span>';
       btn.disabled = false;
       btn.textContent = 'Guardar nuevo link';
       this._toast('✅ Tu link fue actualizado');
@@ -474,7 +480,7 @@ const admin = {
         statusEl.innerHTML = '';
       }, 1500);
     } catch (error) {
-      statusEl.innerHTML = `<span style="color:#EF4444;">⚠️ ${error.message}</span>`;
+      statusEl.innerHTML = `<span style="color:var(--danger);">⚠️ ${error.message}</span>`;
       btn.disabled = false;
       btn.textContent = 'Guardar nuevo link';
     }
@@ -493,7 +499,6 @@ const admin = {
     if (arrow) arrow.style.transform = this.isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)';
   },
 
-
   // -----------------------------
   //   TOAST
   // -----------------------------
@@ -503,25 +508,17 @@ const admin = {
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
-    toast.className = 'qa-toast';
-    toast.style.cssText = `
-      position: fixed; bottom: 30px; right: 30px;
-      padding: 14px 20px;
-      background: ${type === 'error' ? '#EF4444' : '#0F1E33'};
-      color: white; border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-      font-size: 13.5px; font-weight: 500;
-      z-index: 1000; animation: slideUp 0.3s ease;
-      max-width: 320px;
-    `;
+    toast.className = `qa-toast qa-toast-${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
 
+    // Animación de entrada
+    requestAnimationFrame(() => toast.classList.add('show'));
+
     setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s';
+      toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, 3500);
   },
 
 
@@ -546,17 +543,77 @@ const admin = {
       if (tabBtn) this.switchTab(hash, tabBtn);
     }
 
-    if (!document.getElementById('qa-toast-style')) {
-      const style = document.createElement('style');
-      style.id = 'qa-toast-style';
-      style.textContent = `@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
-      document.head.appendChild(style);
-    }
-
     const params = new URLSearchParams(window.location.search);
     if (params.get('welcome') === '1') {
-      setTimeout(() => this._toast('🎉 ¡Bienvenido a Quetzal AI! Configurá tu negocio para empezar.'), 500);
+      setTimeout(() => this._toast('🎉 ¡Bienvenido a Quetzal AI! Empezamos un tour rápido.'), 500);
     }
+  },
+  // -----------------------------
+  //   MODAL DE CONFIRMACIÓN BONITO
+  // -----------------------------
+
+  confirmModal({ title, message, confirmText = 'Aceptar', cancelText = 'Cancelar', type = 'default', icon = '❓' }) {
+    return new Promise((resolve) => {
+      // Quitar modal existente si lo hay
+      const existing = document.getElementById('qa-confirm-overlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'qa-confirm-overlay';
+      overlay.className = 'qa-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="qa-confirm-backdrop"></div>
+        <div class="qa-confirm-card qa-confirm-${type}">
+          <div class="qa-confirm-icon qa-confirm-icon-${type}">${icon}</div>
+          <h3 class="qa-confirm-title">${title}</h3>
+          <p class="qa-confirm-message">${message}</p>
+          <div class="qa-confirm-actions">
+            <button class="qa-confirm-cancel" id="qa-confirm-cancel-btn">${cancelText}</button>
+            <button class="qa-confirm-ok qa-confirm-ok-${type}" id="qa-confirm-ok-btn">${confirmText}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // Animación de entrada
+      requestAnimationFrame(() => overlay.classList.add('show'));
+
+      const close = (result) => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 250);
+        resolve(result);
+      };
+
+      document.getElementById('qa-confirm-ok-btn').onclick = () => close(true);
+      document.getElementById('qa-confirm-cancel-btn').onclick = () => close(false);
+      overlay.querySelector('.qa-confirm-backdrop').onclick = () => close(false);
+
+      // ESC para cancelar
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          close(false);
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    });
+  },
+
+
+  // -----------------------------
+  //   CONFIRMACIÓN DE LOGOUT (actualizada)
+  // -----------------------------
+
+  async confirmLogout() {
+    const ok = await this.confirmModal({
+      title: '¿Cerrar sesión?',
+      message: 'Tu información queda guardada y podés volver cuando quieras.',
+      confirmText: 'Sí, cerrar sesión',
+      cancelText: 'Quedarme',
+      type: 'logout',
+      icon: '👋'
+    });
+    if (ok) auth.logout();
   }
 };
 

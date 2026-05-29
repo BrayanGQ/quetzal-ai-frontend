@@ -1,6 +1,6 @@
 /**
- * Quetzal AI — Panel de Ventas (con Supabase)
- * Las ventas se guardan en la base de datos del usuario logueado
+ * Quetzal AI — Panel de Ventas
+ * Con exportación CSV, estado vacío motivador, mensajes amigables
  */
 
 const ventas = {
@@ -9,19 +9,15 @@ const ventas = {
   isAnalyzing: false,
   isPredicting: false,
   isAdvising: false,
+  isReporting: false,
+  _currentReport: null,
 
-
-  // -----------------------------
-  //   PERSISTENCIA (vía API + Supabase)
-  // -----------------------------
 
   async _loadFromAPI() {
     try {
       const response = await admin.apiCall('/api/sales');
       const data = await response.json();
-      if (data.success) {
-        this.sales = data.sales || [];
-      }
+      if (data.success) this.sales = data.sales || [];
     } catch (error) {
       console.error('[Load sales]', error);
       this.sales = [];
@@ -44,9 +40,21 @@ const ventas = {
     const price = parseFloat(priceInput.value);
     const dateStr = dateInput.value;
 
-    if (!product) { admin._toast('⚠️ Indicá el nombre del producto', 'error'); productInput.focus(); return; }
-    if (!qty || qty < 1) { admin._toast('⚠️ La cantidad debe ser al menos 1', 'error'); qtyInput.focus(); return; }
-    if (!price || price <= 0) { admin._toast('⚠️ El precio debe ser mayor a 0', 'error'); priceInput.focus(); return; }
+    if (!product) {
+      admin._toast('⚠️ Indicá el nombre del producto', 'error');
+      productInput.focus();
+      return;
+    }
+    if (!qty || qty < 1) {
+      admin._toast('⚠️ La cantidad debe ser al menos 1', 'error');
+      qtyInput.focus();
+      return;
+    }
+    if (!price || price <= 0) {
+      admin._toast('⚠️ El precio debe ser mayor a 0', 'error');
+      priceInput.focus();
+      return;
+    }
 
     const date = dateStr ? new Date(dateStr).toISOString() : new Date().toISOString();
 
@@ -56,7 +64,7 @@ const ventas = {
         body: JSON.stringify({ product, qty, price, date })
       });
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || 'Error al registrar venta');
+      if (!data.success) throw new Error(data.error);
 
       this.sales.unshift(data.sale);
       this._renderAll();
@@ -64,20 +72,28 @@ const ventas = {
       productInput.value = '';
       qtyInput.value = '1';
       priceInput.value = '';
+      productInput.focus();
 
-      admin._toast('✅ Venta registrada en la base de datos');
+      admin._toast('✅ Venta registrada');
 
       if (this.sales.length >= 3 && !this.isAnalyzing) {
         this.requestAIAnalysis();
       }
     } catch (error) {
-      console.error('[Add sale]', error);
-      admin._toast(`⚠️ No se pudo registrar: ${error.message}`, 'error');
+      admin._toast('⚠️ No pudimos registrar la venta. Probá de nuevo.', 'error');
     }
   },
 
   async deleteSale(id) {
-    if (!confirm('¿Borrar esta venta del historial?')) return;
+    const ok = await admin.confirmModal({
+      title: '¿Borrar esta venta?',
+      message: 'Se quitará del historial. Esta acción no se puede deshacer.',
+      confirmText: 'Sí, borrar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+      icon: '🗑️'
+    });
+    if (!ok) return;
 
     try {
       const response = await admin.apiCall(`/api/sales/${id}`, { method: 'DELETE' });
@@ -88,14 +104,21 @@ const ventas = {
       this._renderAll();
       admin._toast('Venta eliminada');
     } catch (error) {
-      console.error('[Delete sale]', error);
-      admin._toast(`⚠️ No se pudo borrar: ${error.message}`, 'error');
+      admin._toast('⚠️ No pudimos borrar la venta. Probá de nuevo.', 'error');
     }
   },
 
   async loadSampleData() {
     if (this.sales.length > 0) {
-      if (!confirm('Ya hay ventas registradas. ¿Reemplazar con datos de ejemplo?')) return;
+      const ok = await admin.confirmModal({
+        title: '¿Cargar datos de ejemplo?',
+        message: 'Ya tenés ventas registradas. Cargar el ejemplo borrará las que ya tenés.',
+        confirmText: 'Sí, reemplazar',
+        cancelText: 'Cancelar',
+        type: 'warning',
+        icon: '📋'
+      });
+      if (!ok) return;
       await this.clearAll(true);
     }
 
@@ -112,13 +135,22 @@ const ventas = {
       this.requestAIAnalysis();
       admin._toast(`📋 ${data.count} ventas de ejemplo cargadas`);
     } catch (error) {
-      console.error('[Load sample]', error);
-      admin._toast(`⚠️ No se pudo cargar: ${error.message}`, 'error');
+      admin._toast('⚠️ No pudimos cargar los datos. Probá de nuevo.', 'error');
     }
   },
 
   async clearAll(skipConfirm = false) {
-    if (!skipConfirm && !confirm('¿Borrar TODAS las ventas registradas?')) return;
+    if (!skipConfirm) {
+      const ok = await admin.confirmModal({
+        title: '¿Borrar todas las ventas?',
+        message: 'Se borrarán todas las ventas del historial. Esta acción no se puede deshacer.',
+        confirmText: 'Sí, borrar',
+        cancelText: 'Cancelar',
+        type: 'danger',
+        icon: '🗑️'
+      });
+      if (!ok) return;
+    }
 
     try {
       const response = await admin.apiCall('/api/sales', { method: 'DELETE' });
@@ -129,11 +161,117 @@ const ventas = {
       this._renderAll();
       this.closePrediction();
       this.closeConsejos();
+      this.closeReporte();
       if (!skipConfirm) admin._toast('Todas las ventas fueron eliminadas');
     } catch (error) {
-      console.error('[Clear all]', error);
-      admin._toast(`⚠️ No se pudo borrar: ${error.message}`, 'error');
+      admin._toast('⚠️ No pudimos borrar las ventas.', 'error');
     }
+  },
+
+
+  // -----------------------------
+  //   EXPORTAR A EXCEL
+  // -----------------------------
+
+exportExcel() {
+    if (this.sales.length === 0) {
+      admin._toast('⚠️ No hay ventas para exportar', 'error');
+      return;
+    }
+    if (typeof XLSX === 'undefined') {
+      admin._toast('⚠️ Cargando librería de Excel, intentá de nuevo en 2 segundos', 'error');
+      return;
+    }
+
+    const biz = admin.business || {};
+    const bizName = biz.name || 'Mi negocio';
+    const totalRev = this.sales.reduce((s, x) => s + x.qty * x.price, 0);
+    const totalUnits = this.sales.reduce((s, x) => s + x.qty, 0);
+    const avg = totalRev / this.sales.length;
+    const fecha = new Date().toLocaleString('es-GT', {
+      day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    // Colores de marca
+    const NAVY = '0F1E33', TEAL = '14B8A6', TEAL_DARK = '0F766E';
+    const WHITE = 'FFFFFF', LIGHT = 'F1F5F9', MUTED = '94A3B8', SLATE = 'CBD5E1';
+
+    const rows = [];
+
+    // ===== ENCABEZADO =====
+    rows.push([{ v: 'REPORTE DE VENTAS', s: { font: { bold: true, sz: 18, color: { rgb: WHITE } }, fill: { fgColor: { rgb: NAVY } }, alignment: { vertical: 'center', horizontal: 'left' } } }, {}, {}, {}, {}, {}]);
+    rows.push([{ v: bizName, s: { font: { bold: true, sz: 13, color: { rgb: WHITE } }, fill: { fgColor: { rgb: NAVY } } } }, {}, {}, {}, {}, {}]);
+    const subtitle = [biz.type, biz.location].filter(Boolean).join(' · ') || 'Negocio en Guatemala';
+    rows.push([{ v: subtitle, s: { font: { sz: 10, color: { rgb: SLATE } }, fill: { fgColor: { rgb: NAVY } } } }, {}, {}, {}, {}, {}]);
+    rows.push([{ v: `Generado: ${fecha}  ·  Powered by Quetzal AI`, s: { font: { sz: 9, italic: true, color: { rgb: MUTED } }, fill: { fgColor: { rgb: NAVY } } } }, {}, {}, {}, {}, {}]);
+    rows.push([{}, {}, {}, {}, {}, {}]);
+
+    // ===== RESUMEN =====
+    rows.push([{ v: 'RESUMEN', s: { font: { bold: true, sz: 12, color: { rgb: TEAL_DARK } } } }, {}, {}, {}, {}, {}]);
+    const lbl = { font: { sz: 11, color: { rgb: '475569' } } };
+    const val = { font: { bold: true, sz: 11, color: { rgb: NAVY } } };
+    rows.push([{ v: 'Total de ventas', s: lbl }, { v: `${this.sales.length} transacciones`, s: val }, {}, {}, {}, {}]);
+    rows.push([{ v: 'Unidades vendidas', s: lbl }, { v: totalUnits, s: val }, {}, {}, {}, {}]);
+    rows.push([{ v: 'Ingresos totales', s: lbl }, { v: `Q ${totalRev.toFixed(2)}`, s: val }, {}, {}, {}, {}]);
+    rows.push([{ v: 'Ticket promedio', s: lbl }, { v: `Q ${avg.toFixed(2)}`, s: val }, {}, {}, {}, {}]);
+    rows.push([{}, {}, {}, {}, {}, {}]);
+
+    // ===== DETALLE =====
+    rows.push([{ v: 'DETALLE DE VENTAS', s: { font: { bold: true, sz: 12, color: { rgb: TEAL_DARK } } } }, {}, {}, {}, {}, {}]);
+    const headStyle = {
+      font: { bold: true, sz: 10, color: { rgb: WHITE } },
+      fill: { fgColor: { rgb: TEAL } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: { bottom: { style: 'medium', color: { rgb: TEAL_DARK } } }
+    };
+    rows.push(['Fecha', 'Hora', 'Producto', 'Cantidad', 'Precio Q', 'Total Q'].map(h => ({ v: h, s: headStyle })));
+
+    const sorted = [...this.sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+    sorted.forEach((s, i) => {
+      const d = new Date(s.date);
+      const bg = i % 2 === 0 ? WHITE : LIGHT;
+      const cell = (extra = {}) => ({ font: { sz: 10, color: { rgb: '1E293B' } }, fill: { fgColor: { rgb: bg } }, ...extra });
+      rows.push([
+        { v: d.toLocaleDateString('es-GT'), s: cell({ alignment: { horizontal: 'center' } }) },
+        { v: d.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' }), s: cell({ alignment: { horizontal: 'center' } }) },
+        { v: s.product, s: cell() },
+        { v: s.qty, s: cell({ alignment: { horizontal: 'center' } }) },
+        { v: s.price.toFixed(2), s: cell({ alignment: { horizontal: 'right' } }) },
+        { v: (s.qty * s.price).toFixed(2), s: cell({ font: { sz: 10, bold: true, color: { rgb: NAVY } }, alignment: { horizontal: 'right' } }) }
+      ]);
+    });
+
+    // ===== TOTAL =====
+    const totCell = { font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: NAVY } } };
+    rows.push([
+      { v: '', s: totCell }, { v: '', s: totCell }, { v: '', s: totCell }, { v: '', s: totCell },
+      { v: 'TOTAL:', s: { ...totCell, alignment: { horizontal: 'right' } } },
+      { v: `Q ${totalRev.toFixed(2)}`, s: { ...totCell, alignment: { horizontal: 'right' } } }
+    ]);
+
+    // ===== CONSTRUIR HOJA =====
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 14 }, { wch: 11 }, { wch: 36 }, { wch: 10 }, { wch: 12 }, { wch: 14 }];
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 5 } },
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 5 } },
+      { s: { r: 11, c: 0 }, e: { r: 11, c: 5 } }
+    ];
+    ws['!rows'] = [{ hpt: 28 }, { hpt: 20 }, { hpt: 16 }, { hpt: 16 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+
+    const safeName = bizName.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-');
+    const today = new Date().toISOString().split('T')[0];
+
+    XLSX.writeFile(wb, `ventas-${safeName}-${today}.xlsx`);
+    admin._toast(`📊 ${this.sales.length} ventas exportadas a Excel`);
   },
 
 
@@ -193,6 +331,13 @@ const ventas = {
     this._renderKPIs();
     this._renderChart();
     this._renderTable();
+    this._toggleEmptyState();
+  },
+
+  _toggleEmptyState() {
+    const emptyHero = document.getElementById("ventas-empty-hero");
+    const hasData = this.sales.length > 0;
+    if (emptyHero) emptyHero.style.display = hasData ? 'none' : 'block';
   },
 
   _renderKPIs() {
@@ -249,21 +394,18 @@ const ventas = {
     days.forEach(({ label, amount, weekend }) => {
       const wrap = document.createElement("div");
       wrap.className = "bar-wrap";
-
       if (amount > 0) {
         const valTip = document.createElement("div");
         valTip.className = "bar-tip";
         valTip.textContent = amount >= 1000 ? `Q${(amount/1000).toFixed(1)}k` : `Q${Math.round(amount)}`;
         wrap.appendChild(valTip);
       }
-
       const bar = document.createElement("div");
       bar.className = `bar ${weekend ? "weekend" : ""}`;
       const heightPx = Math.max(Math.round((amount / maxAmount) * 150), amount > 0 ? 10 : 2);
       bar.style.height = `${heightPx}px`;
       bar.title = `${label}: Q${amount.toFixed(2)}`;
       if (amount === 0) bar.style.opacity = '0.25';
-
       wrap.appendChild(bar);
       chartContainer.appendChild(wrap);
 
@@ -319,21 +461,19 @@ const ventas = {
     if (this.isAnalyzing) return;
     this.isAnalyzing = true;
 
-    container.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 analizando tus ${this.sales.length} ventas...</div>`;
+    container.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 La IA está analizando tus ${this.sales.length} ventas...</div>`;
 
     try {
       const response = await admin.apiCall('/api/analizar-ventas', {
-        method: 'POST',
-        body: JSON.stringify({})
+        method: 'POST', body: JSON.stringify({})
       });
       const data = await response.json();
       this.isAnalyzing = false;
-      if (!data.success) throw new Error(data.error || 'Error en análisis');
+      if (!data.success) throw new Error(data.error);
       this._renderInsights(data.insights);
     } catch (error) {
       this.isAnalyzing = false;
-      console.error('[Análisis IA]', error);
-      container.innerHTML = `<div class="insight-empty"><p>⚠️ ${error.message}</p><button class="btn-secondary" style="margin-top:12px;" onclick="ventas.requestAIAnalysis()">Reintentar</button></div>`;
+      container.innerHTML = `<div class="insight-empty"><p>⚠️ No pudimos generar el análisis</p><button class="btn-secondary" style="margin-top:12px;" onclick="ventas.requestAIAnalysis()">Reintentar</button></div>`;
     }
   },
 
@@ -359,13 +499,12 @@ const ventas = {
     const card = document.getElementById("prediction-card");
     const content = document.getElementById("prediction-content");
     card.style.display = "block";
-    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 proyectando los próximos 7 días...</div>`;
+    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 La IA está proyectando los próximos 7 días...</div>`;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     try {
       const response = await admin.apiCall('/api/predecir-ventas', {
-        method: 'POST',
-        body: JSON.stringify({})
+        method: 'POST', body: JSON.stringify({})
       });
       const data = await response.json();
       this.isPredicting = false;
@@ -373,8 +512,7 @@ const ventas = {
       this._renderPrediction(data.prediction);
     } catch (error) {
       this.isPredicting = false;
-      console.error('[Predicción]', error);
-      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
+      content.innerHTML = `<p style="color:var(--danger);padding:14px;">⚠️ No pudimos generar la predicción. Probá de nuevo.</p>`;
     }
   },
 
@@ -427,13 +565,12 @@ const ventas = {
     const card = document.getElementById("consejos-card");
     const content = document.getElementById("consejos-content");
     card.style.display = "block";
-    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 Llama 3.3 generando tu plan de acción...</div>`;
+    content.innerHTML = `<div class="insight-loading"><span class="loading-dots"><span></span><span></span><span></span></span>🧠 La IA está armando tu plan de acción...</div>`;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     try {
       const response = await admin.apiCall('/api/consejos-negocio', {
-        method: 'POST',
-        body: JSON.stringify({})
+        method: 'POST', body: JSON.stringify({})
       });
       const data = await response.json();
       this.isAdvising = false;
@@ -441,8 +578,7 @@ const ventas = {
       this._renderConsejos(data.consejos);
     } catch (error) {
       this.isAdvising = false;
-      console.error('[Consejos]', error);
-      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
+      content.innerHTML = `<p style="color:var(--danger);padding:14px;">⚠️ No pudimos generar los consejos. Probá de nuevo.</p>`;
     }
   },
 
@@ -463,11 +599,10 @@ const ventas = {
     document.getElementById("consejos-card").style.display = "none";
   },
 
+
   // -----------------------------
   //   IA #4 — REPORTE MENSUAL PDF
   // -----------------------------
-
-  isReporting: false,
 
   async requestReporteMensual() {
     if (this.isReporting) return;
@@ -491,19 +626,15 @@ const ventas = {
 
     try {
       const response = await admin.apiCall('/api/reporte-mensual', {
-        method: 'POST',
-        body: JSON.stringify({})
+        method: 'POST', body: JSON.stringify({})
       });
       const data = await response.json();
       this.isReporting = false;
-
       if (!data.success) throw new Error(data.error);
-
       this._renderReportePreview(data.report);
     } catch (error) {
       this.isReporting = false;
-      console.error('[Reporte]', error);
-      content.innerHTML = `<p style="color:#EF4444;padding:14px;">⚠️ ${error.message}</p>`;
+      content.innerHTML = `<p style="color:var(--danger);padding:14px;">⚠️ ${error.message}</p>`;
     }
   },
 
@@ -559,7 +690,6 @@ const ventas = {
       </div>
     `;
 
-    // Guardar para usar al descargar
     this._currentReport = report;
   },
 
@@ -572,7 +702,6 @@ const ventas = {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-
     const pageWidth = doc.internal.pageSize.getWidth();
     const marginX = 18;
     const contentWidth = pageWidth - (marginX * 2);
@@ -583,20 +712,16 @@ const ventas = {
     const COLOR_MUTED = [100, 116, 139];
     const COLOR_GOLD = [180, 83, 9];
 
-    // ========== HEADER ==========
+    // HEADER
     doc.setFillColor(...COLOR_NAVY);
     doc.rect(0, 0, pageWidth, 35, 'F');
-
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.text(report.business.name || 'Reporte mensual', marginX, 18);
-
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    const periodLine = `Reporte de ${report.period.monthName} ${report.period.year}`;
-    doc.text(periodLine, marginX, 26);
-
+    doc.text(`Reporte de ${report.period.monthName} ${report.period.year}`, marginX, 26);
     doc.setFontSize(9);
     doc.setTextColor(180, 200, 220);
     doc.text('Generado con Quetzal AI', pageWidth - marginX, 18, { align: 'right' });
@@ -607,7 +732,7 @@ const ventas = {
 
     y = 50;
 
-    // ========== RESUMEN EJECUTIVO ==========
+    // RESUMEN
     doc.setTextColor(...COLOR_NAVY);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
@@ -640,7 +765,7 @@ const ventas = {
 
     y += 6;
 
-    // ========== PRODUCTOS TOP ==========
+    // PRODUCTOS
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR_NAVY);
@@ -649,31 +774,19 @@ const ventas = {
     doc.line(marginX, y, marginX + 70, y);
     y += 6;
 
-    // Tabla de productos
     doc.autoTable({
       startY: y,
       head: [['#', 'Producto', 'Unidades', 'Ingresos']],
-      body: report.topProducts.slice(0, 5).map((p, i) => [
-        i + 1,
-        p.name,
-        p.units,
-        `Q ${p.revenue.toFixed(2)}`
-      ]),
+      body: report.topProducts.slice(0, 5).map((p, i) => [i + 1, p.name, p.units, `Q ${p.revenue.toFixed(2)}`]),
       theme: 'striped',
-      headStyles: {
-        fillColor: COLOR_PRIMARY,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 10
-      },
+      headStyles: { fillColor: COLOR_PRIMARY, textColor: [255,255,255], fontStyle: 'bold', fontSize: 10 },
       bodyStyles: { fontSize: 10 },
       margin: { left: marginX, right: marginX }
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    // ========== VENTAS POR DÍA ==========
+    // DÍAS
     if (y > 220) { doc.addPage(); y = 20; }
-
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR_NAVY);
@@ -685,27 +798,16 @@ const ventas = {
     doc.autoTable({
       startY: y,
       head: [['Día', 'Transacciones', 'Ingresos', 'Promedio']],
-      body: report.dayBreakdown.map(d => [
-        d.name,
-        d.count,
-        `Q ${d.revenue.toFixed(2)}`,
-        d.count > 0 ? `Q ${(d.revenue / d.count).toFixed(2)}` : '—'
-      ]),
+      body: report.dayBreakdown.map(d => [d.name, d.count, `Q ${d.revenue.toFixed(2)}`, d.count > 0 ? `Q ${(d.revenue / d.count).toFixed(2)}` : '—']),
       theme: 'grid',
-      headStyles: {
-        fillColor: COLOR_NAVY,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 10
-      },
+      headStyles: { fillColor: COLOR_NAVY, textColor: [255,255,255], fontStyle: 'bold', fontSize: 10 },
       bodyStyles: { fontSize: 10 },
       margin: { left: marginX, right: marginX }
     });
     y = doc.lastAutoTable.finalY + 12;
 
-    // ========== ANÁLISIS DE LA IA ==========
+    // ANÁLISIS
     if (y > 220) { doc.addPage(); y = 20; }
-
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR_NAVY);
@@ -714,32 +816,27 @@ const ventas = {
     doc.line(marginX, y, marginX + 65, y);
     y += 8;
 
-    // Hallazgos
     if (report.analysis.hallazgos) {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...COLOR_PRIMARY);
       doc.text('Hallazgos del mes:', marginX, y);
       y += 6;
-
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...COLOR_NAVY);
       doc.setFontSize(10);
-      const hallazgosLines = doc.splitTextToSize(report.analysis.hallazgos, contentWidth);
-      doc.text(hallazgosLines, marginX, y);
-      y += hallazgosLines.length * 5 + 8;
+      const lines = doc.splitTextToSize(report.analysis.hallazgos, contentWidth);
+      doc.text(lines, marginX, y);
+      y += lines.length * 5 + 8;
     }
 
-    // Oportunidades
     if (report.analysis.oportunidades && report.analysis.oportunidades.length > 0) {
       if (y > 240) { doc.addPage(); y = 20; }
-
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...COLOR_GOLD);
       doc.text('Oportunidades identificadas:', marginX, y);
       y += 7;
-
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...COLOR_NAVY);
       doc.setFontSize(10);
@@ -753,10 +850,8 @@ const ventas = {
       y += 5;
     }
 
-    // Recomendaciones
     if (report.analysis.recomendaciones && report.analysis.recomendaciones.length > 0) {
       if (y > 240) { doc.addPage(); y = 20; }
-
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...COLOR_NAVY);
@@ -764,7 +859,6 @@ const ventas = {
       y += 2;
       doc.line(marginX, y, marginX + 95, y);
       y += 8;
-
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...COLOR_NAVY);
       doc.setFontSize(10);
@@ -778,10 +872,8 @@ const ventas = {
       y += 5;
     }
 
-    // Proyección
     if (report.analysis.proyeccion) {
       if (y > 230) { doc.addPage(); y = 20; }
-
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...COLOR_NAVY);
@@ -789,16 +881,12 @@ const ventas = {
       y += 2;
       doc.line(marginX, y, marginX + 30, y);
       y += 8;
-
-      // Recuadro
       const projLines = doc.splitTextToSize(report.analysis.proyeccion, contentWidth - 10);
       const boxHeight = projLines.length * 5 + 10;
-
       doc.setFillColor(245, 250, 252);
       doc.setDrawColor(...COLOR_PRIMARY);
       doc.setLineWidth(0.5);
       doc.roundedRect(marginX, y, contentWidth, boxHeight, 2, 2, 'FD');
-
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(...COLOR_NAVY);
@@ -806,17 +894,13 @@ const ventas = {
       y += boxHeight + 8;
     }
 
-    // ========== FOOTER ==========
+    // FOOTER
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-
-      // Línea
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.3);
       doc.line(marginX, 280, pageWidth - marginX, 280);
-
-      // Texto
       doc.setFontSize(8);
       doc.setTextColor(...COLOR_MUTED);
       doc.setFont('helvetica', 'normal');
@@ -824,14 +908,11 @@ const ventas = {
       doc.text(`Página ${i} de ${pageCount}`, pageWidth - marginX, 285, { align: 'right' });
     }
 
-    // ========== GUARDAR ==========
     const safeName = (report.business.name || 'reporte')
       .toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-');
-    const filename = `reporte-${safeName}-${report.period.monthName.toLowerCase()}-${report.period.year}.pdf`;
-
-    doc.save(filename);
+    doc.save(`reporte-${safeName}-${report.period.monthName.toLowerCase()}-${report.period.year}.pdf`);
     admin._toast('✅ Reporte descargado correctamente');
   },
 
@@ -861,10 +942,6 @@ const ventas = {
   },
 
 
-  // -----------------------------
-  //   INICIALIZACIÓN
-  // -----------------------------
-
   async init() {
     this._setDefaultDate();
     await this._loadFromAPI();
@@ -876,9 +953,7 @@ const ventas = {
   }
 };
 
-// Se inicializa DESPUÉS de admin.init() (que valida la sesión)
 window.addEventListener("DOMContentLoaded", () => {
-  // Esperar a que admin.init termine (necesitamos accessToken)
   const waitForAdmin = setInterval(() => {
     if (admin.accessToken) {
       clearInterval(waitForAdmin);
